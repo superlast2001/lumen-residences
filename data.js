@@ -7,7 +7,7 @@ const PLACE_N={home:'Home',gym:'Lumen Gym',cafe:'Cafe Lumière',restaurant:'Rest
 // ---------------- TENANTS ----------------
 // sz: on-screen chibi height scale; walkFace: which way the sheet's walk frames face; thigh: fraction of the CG height at mid-thigh
 const TENANTS={
-Ares:{dir:'ares',cg:'cg_full_xl.png',thigh:.60,walkN:7,walkFace:'right',color:'#c8323c',plate:'GYM TRAINER',
+Ares:{dir:'ares',cg:'cg_full_xl.png',sitns:1,thigh:.60,walkN:7,walkFace:'right',color:'#c8323c',plate:'GYM TRAINER',
  icons:{heart:'icon_heart',happy:'icon_hearts',angry:'icon_angry',surprised:'icon_surprise',note:'icon_note'},
  title:'Personal trainer · Lumen Gym',likes:['gym','cardio'],foodLove:['steak','grill','bento','water'],foodHate:['wine','whiskey'],
  bio:'Head trainer at Lumen Gym. Loud, confident and a big brother to everyone he meets. His apartment is half bedroom, half home gym — he loves gym furniture.',
@@ -130,91 +130,107 @@ Ophion:{dir:'ophion',cg:'cg_hd.webp',thigh:.61,walkN:8,walkFace:'right',color:'#
 const TENANT_ORDER=['Ares','Zayne','Batzz','Ophion'];
 const FIND_COST=[0,30,60,90];
 
-// ---------------- ROOMS (user's room art; base coords = room.jpg pixels) ----------------
-const ZS=1.536; // Zayne's room: the SVG viewBox (1000x720) rendered at 2000x1440, base = viewBox x1.536
-const zp=(x,y)=>[Math.round(x*ZS),Math.round(y*ZS)];
+// ---------------- ROOMS ----------------
+// type 'tile': an empty apartment shell built on an iso tile grid (floors = the furniture sheet's floor textures),
+//   zones = rooms [u0,v0,w,h], doors = tile pairs that are open between rooms, entry = where tenants come and go.
+// type 'paint': the user's painted apartment kept as-is, with a hand-authored walkable tile grid laid over it (zones are lists
+//   of rects); the furniture painted into the art becomes "spots" tenants walk to and use. No extra sprites are stacked on top.
+const TW=90,tileO=(cols,rows,WH)=>[rows*TW/2+40,WH+60],tileWH=(cols,rows,WH)=>[(cols+rows)*TW/2+80,WH+60+(cols+rows)*TW/4+40];
 const ROOMS={
-Ares:{img:'assets/ares/room_4x.jpg',W:1536,H:542,ch:92,name:'Ares Apartment',
- nodes:{liv1:[330,300],liv2:[460,285],kit1:[560,270],kit2:[700,300],hall:[650,350],ent:[650,440],cor1:[880,330],cor2:[1000,335],bed1:[960,175],gym1:[1080,195],gym2:[1215,205],bath:[1360,320]},
- edges:'liv1-liv2 liv2-kit1 kit1-kit2 kit2-hall hall-ent hall-cor1 cor1-cor2 cor1-bed1 bed1-gym1 gym1-gym2 cor2-bath',
- zoneRect:{GYM:[1000,60,1420,300],CARDIO:[1000,60,1420,300],SOFA:[140,110,560,340]},zoneLabel:{GYM:[1190,70],CARDIO:[1300,250],SOFA:[300,150]},
- spots:[{n:'King bed',act:'sleep',x:985,y:120,at:'bed1'},{n:'Black sofa',act:'sit',x:330,y:190,at:'liv1'},{n:'TV wall',act:'tv',x:610,y:85,at:'kit1'},{n:'Kitchen fridge',act:'fridge',x:742,y:120,at:'kit2'},
-  {n:'Power rack',act:'squat',x:1205,y:95,at:'gym2'},{n:'Dumbbell rack',act:'lift',x:1090,y:235,at:'gym1'},{n:'Punching bag',act:'punch',x:1278,y:140,at:'gym2'},{n:'Exercise ball',act:'stretch',x:1262,y:212,at:'gym2'},{n:'Bathtub',act:'bath',x:1440,y:345,at:'bath'}],
- defFurn:[]},
-Zayne:{img:'assets/zayne/room_hd.jpg',W:1536,H:1106,ch:130,name:'DJ Neon Penthouse',svg:1,z:.8,fs:2.1,
- nodes:{bed:zp(300,262),dj:zp(520,140),lng:zp(490,345),bar:zp(705,232),bath:zp(170,330),ent:zp(692,447)},
- edges:'bed-lng bed-dj dj-bar lng-bar lng-ent bed-bath',
- zoneRect:{STUDIO:[...zp(305,8),...zp(720,233)],LOUNGE:[...zp(290,226),...zp(690,450)],BAR:[...zp(505,116),...zp(900,332)]},zoneLabel:{STUDIO:zp(512,60),LOUNGE:zp(420,400),BAR:zp(790,190)},
- spots:[],
- defFurn:[{k:'bed_red',x:zp(250,250)[0],y:zp(250,250)[1]},{k:'wardrobe_black',x:zp(175,205)[0],y:zp(175,205)[1]},{k:'desk',x:zp(510,112)[0],y:zp(510,112)[1]},{k:'tv',x:zp(590,95)[0],y:zp(590,95)[1]},
-  {k:'sofa_grey',x:zp(470,330)[0],y:zp(470,330)[1]},{k:'table_dark',x:zp(540,370)[0],y:zp(540,370)[1]},{k:'fridge2',x:zp(770,190)[0],y:zp(770,190)[1]},{k:'counter',x:zp(690,215)[0],y:zp(690,215)[1]},
-  {k:'bathtub',x:zp(150,345)[0],y:zp(150,345)[1]},{k:'toilet',x:zp(95,300)[0],y:zp(95,300)[1]},{k:'wardrobe_wood',x:zp(760,440)[0],y:zp(760,440)[1]},{k:'plant_big',x:zp(820,470)[0],y:zp(820,470)[1]},{k:'lamp',x:zp(395,300)[0],y:zp(395,300)[1]}]},
-Batzz:{img:'assets/batzz/room_hd.jpg',W:1536,H:1024,ch:118,name:'Batzz Palace',z:.62,
- nodes:{bed1:[430,445],bed2:[490,365],lng1:[740,600],lng2:[880,575],bath1:[440,700],bath2:[560,650],gym1:[950,370],gym2:[820,330],kit1:[1060,505],kit2:[1290,470],din:[1230,610],ent2:[930,760],ent1:[810,860]},
- edges:'bed1-bed2 bed1-lng1 lng1-lng2 lng1-bath2 bath2-bath1 lng2-gym1 gym1-gym2 lng2-kit1 kit1-kit2 kit1-din lng2-ent2 ent2-ent1',
- zoneRect:{GYM:[700,130,1080,420],THRONE:[470,390,960,640],BATH:[50,470,620,920]},zoneLabel:{GYM:[900,150],THRONE:[640,400],BATH:[280,520]},
- spots:[{n:'Dragon bed',act:'sleep',x:270,y:330,at:'bed1'},{n:'Black sectional',act:'sit',x:600,y:470,at:'lng1'},{n:'Big TV',act:'tv',x:850,y:440,at:'lng2'},{n:'Black fridge',act:'fridge',x:1435,y:430,at:'kit2'},
-  {n:'Dumbbell rack',act:'lift',x:770,y:240,at:'gym2'},{n:'Squat rack',act:'squat',x:905,y:180,at:'gym1'},{n:'Punching bag',act:'punch',x:1045,y:230,at:'gym1'},{n:'Weight bench',act:'lift',x:890,y:320,at:'gym1'},{n:'Rose-petal tub',act:'bath',x:205,y:650,at:'bath1'}],
- defFurn:[]},
-Ophion:{img:'assets/ophion/room_hd.jpg',W:1536,H:1024,ch:112,name:'Roppongi Dragon Suite',z:.62,
- nodes:{bed1:[480,430],bed2:[540,330],std:[760,300],mid:[620,520],lng1:[930,580],lng2:[1040,520],kit:[1180,470],din:[1250,620],bath1:[470,720],bath2:[560,760],ent2:[960,720],ent1:[860,870]},
- edges:'bed1-bed2 bed2-std bed1-mid mid-lng1 lng1-lng2 lng2-kit kit-din mid-bath1 bath1-bath2 lng1-ent2 ent2-ent1',
- zoneRect:{STUDY:[600,120,1000,330],LOUNGE:[510,370,1010,650],DINING:[1000,280,1460,690]},zoneLabel:{STUDY:[800,140],LOUNGE:[690,400],DINING:[1260,300]},
- spots:[{n:'Dragon bed',act:'sleep',x:300,y:330,at:'bed1'},{n:'Leather sofa',act:'sit',x:650,y:460,at:'mid'},{n:'Big TV',act:'tv',x:905,y:385,at:'lng1'},{n:'Steel fridge',act:'fridge',x:1330,y:330,at:'kit'},
-  {n:'Case desk',act:'read',x:835,y:240,at:'std'},{n:'Dining table',act:'cook',x:1330,y:520,at:'din'},{n:'Spa tub',act:'bath',x:290,y:660,at:'bath1'}],
- defFurn:[]},
+Ares:{type:'tile',name:'Ares Apartment',cols:12,rows:10,TW,WH:150,LH:30,ch:122,z:.0,
+ theme:{bg:'#140e13',wall:'#4a3a44',trim:'#d9a45e',lowWall:'#5a4652'},
+ zones:{K:{n:'Kitchen',r:[0,0,6,5],tex:'t00',wall:'#53414a'},G:{n:'Bedroom & home gym',r:[6,0,6,5],tex:'t13',wall:'#3f3a4c'},L:{n:'Living room',r:[0,5,6,5],tex:'t10'},
+  S:{n:'Study',r:[6,5,3,5],tex:'t22'},W:{n:'Bathroom',r:[9,5,3,5],tex:'t01'}},
+ doors:[[5,2,6,2],[4,4,4,5],[5,7,6,7],[8,7,9,7],[7,4,7,5],[10,4,10,5]],
+ entry:{t:[0,7],out:[-1,0],side:'L',img:'double'},
+ windows:[['R',3,2],['R',7,2],['L',1,2]],
+ zoneLabel:{GYM:[7.2,3.4],CARDIO:[10.6,3.9],SOFA:[3.6,8.9]},
+ defFurn:[{k:'bed',u:10,v:0},{k:'sofa_red',u:1,v:5},{k:'table_coffee',u:1,v:7},{k:'fridge',u:1,v:0},{k:'toilet',u:11,v:5},{k:'sink',u:9,v:5},{k:'bench_black',u:7,v:1}]},
+Zayne:{type:'tile',name:'DJ Neon Penthouse',cols:12,rows:10,TW,WH:150,LH:30,ch:122,
+ theme:{bg:'#07070e',wall:'#1d1b34',trim:'#48eaff',lowWall:'#25213e',neon:'#c15aff'},
+ zones:{B:{n:'Bedroom',r:[0,0,4,6],tex:'t03',glow:'#b35cff'},D:{n:'DJ studio',r:[4,0,5,4],tex:'t32',glow:'#48eaff'},K:{n:'Bar kitchen',r:[9,0,3,6],tex:'t11',glow:'#48eaff'},
+  Lg:{n:'Lounge',r:[4,4,5,6],tex:'t32',glow:'#c15aff'},W:{n:'Bathroom',r:[0,6,4,4],tex:'t33',glow:'#3ac8ff'},E:{n:'Entrance',r:[9,6,3,4],tex:'t31',glow:'#8e65bc'}},
+ doors:[[3,1,4,1],[8,1,9,1],[6,3,6,4],[1,5,1,6],[8,7,9,7],[10,5,10,6],[3,5,4,5]],
+ entry:{t:[11,8],out:[1,0],side:'F'},
+ windows:[['R',5,3],['L',2,2],['L',7,2]],
+ zoneLabel:{STUDIO:[6.5,1.4],LOUNGE:[6.5,7],BAR:[10.5,2.6]},
+ defFurn:[{k:'bed',u:1,v:0},{k:'desk',u:5,v:0},{k:'sofa_grey',u:4,v:4},{k:'table_coffee',u:4,v:6},{k:'fridge',u:10,v:0},{k:'toilet',u:2,v:6},{k:'sink',u:3,v:6}]},
+Batzz:{type:'paint',img:'assets/batzz/room_hd.jpg',W:1536,H:1024,ch:118,name:'Batzz Palace',z:.62,cols:40,rows:40,O:[768,-380],eu:[40,21.33],ev:[-40,21.33],
+ zones:{B:{n:'Bedroom',rs:[[13,19,2,6],[10,25,5,2],[10,18,4,1]]},C:{n:'Closet',rs:[[10,16,3,2]]},G:{n:'Home gym',rs:[[15,12,2,8],[17,16,3,2]]},
+  L:{n:'Lounge',rs:[[19,19,3,2],[22,20,3,2],[22,22,2,1],[22,18,1,2],[25,20,4,1],[25,21,1,3]]},K:{n:'Kitchen',rs:[[20,16,3,1],[22,17,9,1],[26,16,4,1],[27,12,1,4],[30,18,1,1]]},
+  H:{n:'Hall',rs:[[23,24,3,4],[24,28,2,3],[26,27,6,4]]},W:{n:'Bathroom',rs:[[20,28,4,3]]}},
+ doors:[[11,18,11,17],[14,19,15,19],[19,16,20,16],[22,17,22,18],[25,23,25,24],[24,29,23,29]],
+ entry:{t:[28,30],out:[0,1]},
+ spots:[{n:'Dragon bed',act:'sleep',pose:'sleep',t:[13,21],at:[10.6,22.2]},{n:'Black sectional',act:'sit',pose:'sit',t:[19,20],at:[17.9,21.2],face:'left'},
+  {n:'Dumbbell rack',act:'lift',pose:'flex',t:[15,14]},{n:'Punching bag',act:'punch',pose:'punch',t:[16,12]},{n:'Weight bench',act:'lift',pose:'flex',t:[17,16]},
+  {n:'Black fridge',act:'fridge',pose:'front',t:[27,12]},{n:'Kitchen island',act:'cook',pose:'front',t:[24,17]},
+  {n:'Rose-petal tub',act:'bath',pose:'bath',t:[20,30],at:[17.2,30.5],clip:.5},{n:'Vanity',act:'wash',pose:'front',t:[20,28]}],
+ zoneLabel:{GYM:[15.5,10],THRONE:[19,19.6],BATH:[19,28.5]}},
+Ophion:{type:'paint',img:'assets/ophion/room_hd.jpg',W:1536,H:1024,ch:112,name:'Roppongi Dragon Suite',z:.62,cols:40,rows:40,O:[768,-380],eu:[40,21.33],ev:[-40,21.33],
+ zones:{B:{n:'Bedroom',rs:[[13,19,2,6],[10,25,5,2],[10,18,4,1]]},C:{n:'Closet',rs:[[10,17,3,1],[12,15,2,2]]},S:{n:'Study',rs:[[14,15,1,1],[15,15,3,1],[17,14,3,2]]},
+  K:{n:'Kitchen & dining',rs:[[20,15,6,2],[25,11,2,4]]},L:{n:'Lounge',rs:[[20,17,2,2],[21,19,1,2],[22,19,3,5]]},H:{n:'Hall',rs:[[25,23,3,4],[24,28,2,2],[26,27,6,4]]},W:{n:'Bathroom',rs:[[20,28,4,3]]}},
+ doors:[[11,18,11,17],[13,15,14,15],[19,15,20,15],[20,16,20,17],[24,23,25,23],[23,29,24,29]],
+ entry:{t:[28,30],out:[0,1]},
+ spots:[{n:'Dragon bed',act:'sleep',pose:'sleep',t:[13,21],at:[10.6,22.2]},{n:'Leather sofa',act:'sit',pose:'sit',t:[21,19],at:[17.8,20.5],face:'left'},
+  {n:'Case desk',act:'read',pose:'front',t:[17,14]},{n:'Steel fridge',act:'fridge',pose:'front',t:[25,11]},{n:'Kitchen island',act:'cook',pose:'front',t:[22,15]},
+  {n:'Spa tub',act:'bath',pose:'bath',t:[20,30],at:[18,30.5],clip:.5},{n:'Vanity',act:'wash',pose:'front',t:[21,28]}],
+ zoneLabel:{STUDY:[16,12],LOUNGE:[21,18.5],DINING:[25,12.5]}},
 };
+for(const n in ROOMS){const R=ROOMS[n];if(R.type=='tile'){R.O=tileO(R.cols,R.rows,R.WH);[R.W,R.H]=tileWH(R.cols,R.rows,R.WH);}}
 
-// ---------------- FURNITURE (sliced from the furniture sheet in ares-apartment.png) ----------------
-// act: what a tenant does with it; cat: shop tab
+// ---------------- FURNITURE (each piece cut from the furniture sheet with SAM + Real-ESRGAN; see assets/tools/furn_sam.py) ----------------
+// act: what a tenant does with it; cat: shop tab. Footprints / use points live in world.js (FDEF).
 const FURN={
-fridge:{n:'White fridge',cat:'Kitchen',p:60,act:'fridge'},fridge2:{n:'Twin-door fridge',cat:'Kitchen',p:80,act:'fridge'},fridge_glass:{n:'Glass drinks fridge',cat:'Kitchen',p:90,act:'fridge'},
-sink:{n:'Sink counter',cat:'Kitchen',p:40,act:'cook'},counter:{n:'Double sink counter',cat:'Kitchen',p:50,act:'cook'},
-sofa_red:{n:'Red velvet sofa',cat:'Living',p:70,act:'sit'},sofa_cream:{n:'Cream sofa',cat:'Living',p:65,act:'sit'},sofa_grey:{n:'Grey sofa',cat:'Living',p:55,act:'sit'},couch_red:{n:'Red sectional',cat:'Living',p:75,act:'sit'},
-armchair:{n:'Red armchair',cat:'Living',p:35,act:'sit'},tv:{n:'Big TV + console',cat:'Living',p:90,act:'tv'},table_dark:{n:'Dark coffee table',cat:'Living',p:30},rug_red:{n:'Red lacquer table',cat:'Living',p:30},
-lamp:{n:'Floor lamp',cat:'Living',p:18},
-bed_red:{n:'Red & black bed',cat:'Bedroom',p:90,act:'sleep'},wardrobe:{n:'Glass wardrobe',cat:'Bedroom',p:55},wardrobe_black:{n:'Black wardrobe',cat:'Bedroom',p:50},wardrobe_wood:{n:'Wood wardrobe',cat:'Bedroom',p:45},lamp2:{n:'Standing lamp',cat:'Bedroom',p:15},
-bathtub:{n:'White bathtub',cat:'Bath',p:70,act:'bath'},shower:{n:'Glass shower',cat:'Bath',p:80,act:'bath'},tub_vanity:{n:'Bath vanity',cat:'Bath',p:40},vanity_black:{n:'Black vanity',cat:'Bath',p:45},toilet:{n:'Toilet',cat:'Bath',p:30},cabinet:{n:'Bath cabinet',cat:'Bath',p:30},
-powerrack:{n:'Power rack',cat:'Gym',p:150,act:'squat'},benchpress:{n:'Bench press station',cat:'Gym',p:90,act:'lift'},dumbbells:{n:'Dumbbell set',cat:'Gym',p:60,act:'lift'},bench_blue:{n:'Blue flat bench',cat:'Gym',p:30,act:'lift'},
-pullup:{n:'Pull-up tower',cat:'Gym',p:70,act:'pull'},speedbag:{n:'Speed bag stand',cat:'Gym',p:35,act:'punch'},treadmill:{n:'Treadmill',cat:'Gym',p:110,act:'run'},machine_red:{n:'Red cardio machine',cat:'Gym',p:100,act:'run'},
-ball:{n:'Exercise ball',cat:'Gym',p:12,act:'stretch'},abbench:{n:'Curved ab bench',cat:'Gym',p:35,act:'stretch'},lockers:{n:'Red gym lockers',cat:'Gym',p:40},gym_cabinet:{n:'Gym cabinet',cat:'Gym',p:45},
-bookcase_red:{n:'Red bookcase',cat:'Study',p:60,act:'read'},bookshelf:{n:'Tall bookshelf',cat:'Study',p:60,act:'read'},bookshelf2:{n:'Wood bookshelf',cat:'Study',p:55,act:'read'},desk:{n:'Writing desk',cat:'Study',p:55,act:'read'},
-chair_red:{n:'Red desk chair',cat:'Study',p:20,act:'sit'},cabinet_glass:{n:'Display cabinet',cat:'Study',p:50},globe:{n:'Globe',cat:'Study',p:30,act:'read'},rug_ornate:{n:'Ornate rug',cat:'Study',p:30,flat:1},
-plant_big:{n:'Big potted palm',cat:'Decor',p:25},palm:{n:'Palm in white pot',cat:'Decor',p:22},plant:{n:'Leafy plant',cat:'Decor',p:18},roses:{n:'Red-flower plant',cat:'Decor',p:24},
-statue_red:{n:'Knight statue',cat:'Decor',p:70},statue_white:{n:'Marble statue',cat:'Decor',p:70},armor:{n:'Red armour',cat:'Decor',p:85},lamp_warm:{n:'Warm floor lamp',cat:'Decor',p:20},lamp_floor:{n:'Brass floor lamp',cat:'Decor',p:18},
+fridge:{n:'White fridge',cat:'Kitchen',p:60,act:'fridge'},fridge2:{n:'Twin-door fridge',cat:'Kitchen',p:80,act:'fridge'},counter:{n:'Kitchen counter',cat:'Kitchen',p:50,act:'cook'},
+sofa_red:{n:'Red velvet sofa',cat:'Living',p:70,act:'sit'},sofa_cream:{n:'Cream sofa',cat:'Living',p:65,act:'sit'},sofa_grey:{n:'Grey sofa',cat:'Living',p:55,act:'sit'},sofa_black:{n:'Black leather sofa',cat:'Living',p:75,act:'sit'},
+armchair:{n:'Red armchair',cat:'Living',p:35,act:'sit'},tv:{n:'Big TV + console',cat:'Living',p:90,act:'tv'},table_coffee:{n:'Coffee table',cat:'Living',p:30},
+rug_red:{n:'Red rug',cat:'Living',p:25},lamp_floor:{n:'Brass floor lamp',cat:'Living',p:18},
+bed:{n:'Double bed',cat:'Bedroom',p:90,act:'sleep'},bed_grey:{n:'Grey king bed',cat:'Bedroom',p:120,act:'sleep'},wardrobe_wood:{n:'Wood wardrobe',cat:'Bedroom',p:45},wardrobe_black:{n:'Black wardrobe',cat:'Bedroom',p:50},
+bathtub:{n:'White bathtub',cat:'Bath',p:70,act:'bath'},shower:{n:'Glass shower',cat:'Bath',p:80,act:'shower'},toilet:{n:'Toilet',cat:'Bath',p:30,act:'toilet'},sink:{n:'Pedestal sink',cat:'Bath',p:25,act:'wash'},vanity:{n:'Bathroom vanity',cat:'Bath',p:40,act:'wash'},
+desk:{n:'Desk & chair',cat:'Study',p:55,act:'read'},chair_red:{n:'Red chair',cat:'Study',p:20,act:'sit'},bookshelf:{n:'Tall bookshelf',cat:'Study',p:60,act:'read'},bookcase_red:{n:'Red bookcase',cat:'Study',p:60,act:'read'},
+treadmill:{n:'Treadmill',cat:'Gym',p:110,act:'run'},machine_red:{n:'Cardio machine',cat:'Gym',p:100,act:'run'},bench_black:{n:'Weight bench',cat:'Gym',p:45,act:'lift'},bench_blue:{n:'Flat bench',cat:'Gym',p:30,act:'lift'},
+kettlebell:{n:'Kettlebell',cat:'Gym',p:15,act:'lift'},pullup:{n:'Pull-up tower',cat:'Gym',p:70,act:'pull'},speedbag:{n:'Speed bag stand',cat:'Gym',p:35,act:'punch'},ball:{n:'Exercise ball',cat:'Gym',p:12,act:'stretch'},lockers:{n:'Red gym lockers',cat:'Gym',p:40},
+plant:{n:'Leafy plant',cat:'Decor',p:18},plant_palm:{n:'Potted palm',cat:'Decor',p:22},plant_big:{n:'Big potted palm',cat:'Decor',p:25},palm:{n:'Palm in white pot',cat:'Decor',p:22},roses:{n:'Red-flower plant',cat:'Decor',p:24},
+statue_white:{n:'Marble statue',cat:'Decor',p:70},armor:{n:'Red armour',cat:'Decor',p:85},lamp_warm:{n:'Warm floor lamp',cat:'Decor',p:20},
 ring:{n:'Engagement ring',cat:'Special',p:500,item:1},
 };
 const FURN_CATS=['Gym','Living','Kitchen','Bedroom','Bath','Study','Decor','Special'];
-const FURN_SCALE=1.25; // furniture sheet → room art scale
 const FOOD={noodles:{n:'Noodle bowl',p:6},hotpot:{n:'Hot pot',p:9},grill:{n:'Grill platter',p:12},paella:{n:'Paella',p:10},sushi:{n:'Sushi plates',p:11},steak:{n:'Steak box',p:14},
  wine:{n:'Red wine',p:9},water:{n:'Water bottle',p:1},jar:{n:'Pickle jar',p:3},sauce:{n:'Hot sauce',p:2},rice:{n:'Rice cooker',p:8},coffee:{n:'Coffee cup',p:2},whiskey:{n:'Whiskey',p:12},juice:{n:'Orange juice',p:3},pizza:{n:'Pizza box',p:9},bento:{n:'Bento box',p:7}};
 const SHOP_FOOD={cafe:['coffee','juice','water','bento','noodles','pizza'],restaurant:['steak','sushi','paella','grill','hotpot','rice','wine','whiskey'],club:['whiskey','wine','juice','water']};
 
-// ---------------- PLACES (simple illustrated interiors; props are furniture-sheet sprites) ----------------
-const DP=(u,v)=>[Math.round(500+u*450-v*450),Math.round(170+u*225+v*225)];
-const PR=(k,u,v)=>[k,...DP(u,v)];
+// ---------------- PLACES (10x10 tile interiors; props are sheet sprites placed on tiles: unmirrored fronts face down-left, r:1 faces down-right) ----------------
+// entry: the exit door tile (left wall, tile 0,8). The lobby elevator is at the back-right wall tile (6,0).
+const F=(k,u,v,r=0)=>({k,u,v,r});
+const EXIT={t:[0,8],out:[-1,0]};
 const PLACES={
-lobby:{n:'Lumen Residences · Lobby',wall:['#b95f43','#a84f3d'],trim:'#f0d3ae',floor:['#f3e4c8','#e3cfa8'],rug:'#51b84d',sign:'LUMEN RESIDENCES',
- props:[PR('plant_big',.05,.06),PR('desk',.36,.13),PR('palm',.92,.07),PR('sofa_cream',.12,.42),PR('armchair',.14,.22),PR('table_dark',.3,.45),PR('lamp_warm',.88,.3),PR('plant',.08,.62),PR('roses',.9,.55)],
- hot:[{id:'elevator',n:'Elevator',kind:'door'},{id:'exit',n:'Front door',kind:'exit'},{id:'desk',n:'Reception',x:DP(.36,.24)[0],y:DP(.36,.24)[1],kind:'desk'}]},
-gym:{n:'Lumen Gym',wall:['#4a5468','#3a4254'],trim:'#d6dbe6',floor:['#3b3f4a','#30333c'],rug:'#b8323c',sign:'LUMEN GYM',
- props:[PR('lockers',.05,.07),PR('powerrack',.08,.3),PR('dumbbells',.1,.56),PR('treadmill',.3,.07),PR('machine_red',.55,.07),PR('benchpress',.84,.1),PR('speedbag',.93,.38),PR('bench_blue',.92,.62),PR('ball',.86,.86),PR('abbench',.42,.93)],
- hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'train',n:'Train together',x:DP(.68,.68)[0],y:DP(.68,.68)[1],kind:'train'}]},
-cafe:{n:'Cafe Lumière',wall:['#e9c9a0','#d9b48a'],trim:'#fff4dc',floor:['#b9875a','#a8774c'],rug:'#7aa86a',sign:'CAFE LUMIÈRE',
- props:[PR('fridge_glass',.06,.12),PR('counter',.26,.06),PR('lamp_warm',.46,.05),PR('palm',.92,.07),PR('plant',.06,.6),PR('table_dark',.8,.72),PR('chair_red',.68,.72),PR('chair_red',.86,.56),PR('armchair',.5,.92)],
- hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'counter',n:'Order counter',x:DP(.26,.2)[0],y:DP(.26,.2)[1],kind:'food'}]},
-restaurant:{n:'Restaurant Rosso',wall:['#7a1f2a','#661a24'],trim:'#e8c88a',floor:['#2e2228','#261c21'],rug:'#a8323c',sign:'RISTORANTE ROSSO',
- props:[PR('cabinet_glass',.06,.18),PR('counter',.24,.06),PR('lamp_warm',.5,.05),PR('statue_white',.9,.07),PR('roses',.06,.6),PR('rug_red',.76,.76),PR('chair_red',.64,.76),PR('chair_red',.8,.6),PR('roses',.93,.45)],
- hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'counter',n:'Order from the menu',x:DP(.24,.2)[0],y:DP(.24,.2)[1],kind:'food'}]},
-park:{n:'City Park',outdoor:1,floor:['#7cc46a','#6ab45a'],rug:'#cbb48a',sign:'CITY PARK',
- props:[PR('palm',.05,.1),PR('statue_white',.2,.18),PR('plant_big',.92,.05),PR('bench_blue',.3,.66),PR('bench_blue',.64,.72),PR('roses',.05,.5),PR('roses',.93,.5),PR('lamp_warm',.6,.42),PR('plant',.38,.93),PR('palm',.92,.92)],
- hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'stroll',n:'Pond path',x:DP(.55,.3)[0],y:DP(.55,.3)[1],kind:'stroll'}]},
-fshop:{n:'Furniture Shop',wall:['#f2efe8','#e4dfd4'],trim:'#c9a35a',floor:['#d8c6a6','#c9b593'],rug:'#3a6ab4',sign:'LUMEN FURNITURE',
- props:[PR('armor',.05,.14),PR('sofa_red',.09,.42),PR('fridge2',.26,.06),PR('bed_red',.5,.08),PR('bookcase_red',.84,.07),PR('tv',.08,.68),PR('powerrack',.93,.4),PR('sofa_cream',.9,.74),PR('plant_big',.6,.93),PR('desk',.36,.88)],
- hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'shop',n:'Shop counter',x:500,y:395,kind:'shop'}]},
-club:{n:'Night Club Neon',wall:['#1c1630','#151026'],trim:'#c15aff',floor:['#221a3a','#1a1430'],rug:'#48eaff',sign:'CLUB NEON',neon:1,
- props:[PR('lamp',.15,.06),PR('counter',.36,.06),PR('lamp',.6,.06),PR('couch_red',.08,.32),PR('armchair',.08,.6),PR('sofa_red',.9,.28),PR('statue_red',.92,.6)],
- hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'dance',n:'Dance floor',x:DP(.64,.64)[0],y:DP(.64,.64)[1],kind:'dance'},{id:'counter',n:'Bar',x:DP(.36,.2)[0],y:DP(.36,.2)[1],kind:'food'}]},
+lobby:{n:'Lumen Residences · Lobby',wall:['#b95f43','#a84f3d'],trim:'#f0d3ae',tex:'t02',sign:'LUMEN RESIDENCES',entry:EXIT,elev:{t:[6,0],out:[0,-1]},
+ props:[F('plant_big',0,0),F('desk',2,0),F('palm',9,0),F('lamp_warm',4,0),F('sofa_cream',0,3,1),F('table_coffee',2,3,1),F('armchair',2,2),F('plant',0,6,1),F('roses',9,4)],
+ hot:[{id:'elevator',n:'Elevator',kind:'door'},{id:'exit',n:'Front door',kind:'exit'},{id:'desk',n:'Reception',t:[3,2],kind:'desk'}]},
+gym:{n:'Lumen Gym',wall:['#4a5468','#3a4254'],trim:'#d6dbe6',tex:'t23',sign:'LUMEN GYM',entry:EXIT,
+ props:[F('treadmill',1,0),F('treadmill',4,0),F('machine_red',7,0),F('lockers',9,0),F('pullup',0,2,1),F('speedbag',0,4,1),F('lockers',0,6,1),
+  F('bench_black',3,4),F('kettlebell',6,4),F('ball',8,4),F('rug_red',5,6),F('bench_blue',2,7),F('plant_big',0,0)],
+ extras:[{n:'Mika',on:'treadmill',oi:0},{n:'Sora',on:'machine_red'},{n:'Leon',on:'pullup'},{n:'Big Dano',t:[4,3]},{n:'Tomas',t:[3,5]},{n:'Jett',t:[1,4],flip:0},
+  {n:'Coach Rin',t:[6,7]},{n:'Priya',t:[7,6]},{n:'Gus',t:[8,8],flip:1}],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'train',n:'Train together',t:[5,8],kind:'train'}]},
+cafe:{n:'Cafe Lumière',wall:['#e9c9a0','#d9b48a'],trim:'#fff4dc',tex:'t12',sign:'CAFE LUMIÈRE',entry:EXIT,
+ props:[F('counter',2,0),F('fridge2',4,0),F('lamp_warm',6,0),F('plant_palm',9,0),F('plant',0,5,1),F('table_coffee',5,5),F('chair_red',5,4),F('chair_red',6,4),F('chair_red',4,5,1),
+  F('table_coffee',6,8),F('chair_red',6,7),F('chair_red',7,7),F('armchair',9,6)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'counter',n:'Order counter',t:[3,1],kind:'food'}]},
+restaurant:{n:'Restaurant Rosso',wall:['#7a1f2a','#661a24'],trim:'#e8c88a',tex:'t21',sign:'RISTORANTE ROSSO',entry:EXIT,
+ props:[F('counter',2,0),F('bookcase_red',0,1,1),F('lamp_warm',5,0),F('statue_white',9,0),F('roses',0,5,1),F('table_coffee',5,3),F('chair_red',5,2),F('chair_red',6,2),F('chair_red',4,3,1),
+  F('table_coffee',5,7),F('chair_red',5,6),F('chair_red',6,6),F('chair_red',4,7,1),F('roses',9,4),F('plant_big',9,1)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'counter',n:'Order from the menu',t:[3,1],kind:'food'}]},
+park:{n:'City Park',outdoor:1,sign:'CITY PARK',entry:EXIT,
+ props:[F('palm',0,0),F('statue_white',2,1),F('plant_big',9,0),F('bench_blue',3,6),F('bench_blue',6,7),F('roses',0,5,1),F('roses',9,5),F('lamp_warm',6,4),F('plant',0,7,1),F('palm',9,8)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'stroll',n:'Pond path',t:[5,3],kind:'stroll'}]},
+fshop:{n:'Furniture Shop',wall:['#f2efe8','#e4dfd4'],trim:'#c9a35a',tex:'t20',sign:'LUMEN FURNITURE',entry:EXIT,
+ props:[F('armor',0,1,1),F('sofa_red',0,3,1),F('fridge2',2,0),F('bed',4,0),F('bookcase_red',7,0),F('tv',0,5,1),F('treadmill',6,5),F('sofa_cream',3,6),F('plant_big',9,1),F('desk',8,2)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'shop',n:'Shop counter',t:[4,4],kind:'shop'}]},
+club:{n:'Night Club Neon',wall:['#1c1630','#151026'],trim:'#c15aff',tex:'t32',sign:'CLUB NEON',neon:1,entry:EXIT,dance:[3,3,5,5],
+ props:[F('djbooth',2,1),F('speaker',1,1),F('speaker',6,1),F('counter',8,0),F('barstool',8,1),F('barstool',9,1),F('sofa_black',0,3,1),F('table_coffee',1,3,1),F('armchair',0,6,1),F('plant_palm',9,2),F('speaker',9,6,1)],
+ extras:[{n:'Nova',t:[4,4]},{n:'Kai',t:[6,4]},{n:'Luz',t:[5,6]},{n:'Ivy',t:[3,6]},{n:'Rafe',t:[7,6],flip:1},{n:'Dex',t:[2,3]},{n:'Mei',t:[8,2],flip:1}],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'dance',n:'Dance floor',t:[5,5],kind:'dance'},{id:'counter',n:'Bar',t:[8,2],kind:'food'}]},
 };
 const TRAVEL=['gym','cafe','restaurant','park','fshop','club'];
-const PLACE_DESC={gym:'Train with tenants · Ares works here',cafe:'Coffee, bento & snacks',restaurant:'Steak, sushi & dinner',park:'Fresh air & stakeouts',fshop:'Buy furniture for the rooms',club:'Zayne spins 9 PM – 3 AM'};
+const PLACE_DESC={gym:'Train with tenants · Ares coaches here',cafe:'Coffee, bento & snacks',restaurant:'Steak, sushi & dinner',park:'Fresh air & stakeouts',fshop:'Buy furniture for the rooms',club:'Zayne DJs 9 PM – 3 AM'};

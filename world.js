@@ -13,7 +13,7 @@ const FDEF={
  sofa_grey:{fp:[2,1],oy:3,use:{act:'sit',pose:'sit',dx:-2,dy:-16}},sofa_black:{fp:[2,1],oy:3,use:{act:'sit',pose:'sit',dx:-4,dy:-20}},
  armchair:{fp:[1,1],oy:2,use:{act:'sit',pose:'sit',dx:0,dy:-14}},chair_red:{fp:[1,1],oy:2,use:{act:'sit',pose:'sit',dx:0,dy:-16}},
  table_coffee:{fp:[2,1],oy:2},table_red:{fp:[2,1],oy:2},rug_red:{fp:[3,2],flat:1,oy:0},
- tv:{fp:[2,1],oy:2,use:{act:'tv',pose:'front'}},
+ tv:{fp:[2,1],oy:2,sc:.85,use:{act:'tv',pose:'front'}},
  fridge:{fp:[1,1],oy:3,use:{act:'fridge',pose:'front'}},fridge2:{fp:[1,1],oy:3,use:{act:'fridge',pose:'front'}},
  counter:{fp:[2,1],oy:3,use:{act:'cook',pose:'front'}},
  toilet:{fp:[1,1],oy:2,use:{act:'toilet',pose:'front'}},sink:{fp:[1,1],oy:2,use:{act:'wash',pose:'front'}},vanity:{fp:[1,1],oy:2,use:{act:'wash',pose:'front'}},
@@ -21,8 +21,8 @@ const FDEF={
  desk:{fp:[2,2],oy:3,use:{act:'read',pose:'sit',dx:-34,dy:-4,back:1}},bookshelf:{fp:[2,1],oy:2,use:{act:'read',pose:'front'}},bookcase_red:{fp:[2,1],oy:2,use:{act:'read',pose:'front'}},
  wardrobe_wood:{fp:[1,1],oy:2},wardrobe_black:{fp:[1,1],oy:2},lamp_floor:{fp:[1,1],oy:2},
  plant:{fp:[1,1],oy:3},plant_palm:{fp:[1,1],oy:3},plant_big:{fp:[1,1],oy:3},
- treadmill:{fp:[3,2],oy:3,use:{act:'run',pose:'run',dx:0,dy:-20}},bench_black:{fp:[2,1],oy:2,use:{act:'lift',pose:'flex'}},bench_blue:{fp:[2,1],oy:2,use:{act:'lift',pose:'sit',dx:0,dy:-8}},
- ball:{fp:[1,1],oy:2,use:{act:'stretch',pose:'stretch'}},pullup:{fp:[1,1],oy:3,use:{act:'pull',pose:'in',dx:0,dy:-4,pull:1}},
+ treadmill:{fp:[3,2],oy:3,sc:.8,use:{act:'run',pose:'run',dx:0,dy:-20}},bench_black:{fp:[2,1],oy:2,use:{act:'lift',pose:'flex'}},bench_blue:{fp:[2,1],oy:2,use:{act:'lift',pose:'sit',dx:0,dy:-8}},
+ ball:{fp:[1,1],oy:2,sc:.72,use:{act:'stretch',pose:'stretch'}},pullup:{fp:[1,1],oy:3,use:{act:'pull',pose:'in',dx:0,dy:-4,pull:1}},
  speedbag:{fp:[1,1],oy:2,use:{act:'punch',pose:'punch'}},machine_red:{fp:[1,1],oy:2,use:{act:'run',pose:'front'}},kettlebell:{fp:[1,1],oy:1,use:{act:'lift',pose:'flex'}},
  lockers:{fp:[1,1],oy:2},
  // older clean decor cuts (assets/furn)
@@ -51,9 +51,13 @@ function buildGrid(sc){let G;
   for(const z in R.zones){const [u0,v0,w,h]=R.zones[z].r;for(let u=u0;u<u0+w;u++)for(let v=v0;v<v0+h;v++)G.zone[u][v]=z;}
   R.doors.forEach(([a,b,c,d])=>G.door.add(G.ek(a,b,c,d)));}
  else{const R=sc.R;G=mkGrid(R.cols,R.rows,R.O,R.eu,R.ev);
-  for(let u=0;u<R.cols;u++)for(let v=0;v<R.rows;v++){const [x,y]=G.tc(u,v);for(const z in R.zones)if(R.zones[z].poly.some(P=>pinPoly(x,y,P))){G.zone[u][v]=z;break;}}
-  for(let u=0;u<R.cols;u++)for(let v=0;v<R.rows;v++)for(const [du,dv] of [[1,0],[0,1]]){const a=u+du,b=v+dv;if(!G.floor(u,v)||!G.floor(a,b)||G.zone[u][v]==G.zone[a][b])continue;
-   const [x,y]=G.pt(u+.5+du*.5,v+.5+dv*.5);if(R.doors.some(([dx,dy,r])=>Math.hypot(dx-x,(dy-y)*1.6)<r))G.door.add(G.ek(u,v,a,b));}}
+  for(const z in R.zones)R.zones[z].rs.forEach(([u0,v0,w,h])=>{for(let u=u0;u<u0+w;u++)for(let v=v0;v<v0+h;v++)if(G.in(u,v))G.zone[u][v]=z;});
+  R.doors.forEach(([a,b,c,d])=>G.door.add(G.ek(a,b,c,d)));}
+ G.k=sc.kind=='place'?1:(sc.R.TW||80)/90;
+ // tiles that must stay walkable: both sides of every doorway, the entry, painted-furniture use spots
+ G.keep=new Set();const keep=(u,v)=>G.keep.add(u*512+v);
+ if(sc.kind=='room'){sc.R.doors.forEach(([a,b,c,d])=>{keep(a,b);keep(c,d);});if(sc.R.entry)keep(...sc.R.entry.t);(sc.R.spots||[]).forEach(s=>keep(...s.t));}
+ else{const P=sc.P||{};if(P.entry)keep(...P.entry.t);if(P.elev)keep(...P.elev.t);(P.hot||[]).forEach(h=>h.t&&keep(...h.t));}
  return G;}
 // A* over walkable tiles (4-neighbour = the two iso axes). Furniture blocks; walls block unless the edge is a doorway.
 function astar(G,s,g,me){if(!G.floor(g[0],g[1]))return null;const K=(u,v)=>u*512+v,goal=K(g[0],g[1]);const open=[[Math.abs(s[0]-g[0])+Math.abs(s[1]-g[1]),0,s[0],s[1]]],came=new Map([[K(s[0],s[1]),null]]),cost=new Map([[K(s[0],s[1]),0]]);
@@ -68,17 +72,19 @@ function reach(G,s,me){const seen=new Set([s[0]*512+s[1]]),q=[s],out=[];while(q.
 const fpOf=f=>{const d=FDEF[f.k]||{fp:[1,1]};return f.r?[d.fp[1],d.fp[0]]:d.fp;};
 function fTiles(f){const [w,h]=fpOf(f),T=[];for(let i=0;i<w;i++)for(let j=0;j<h;j++)T.push([f.u+i,f.v+j]);return T;}
 function fBase(G,f){const [w,h]=fpOf(f),L=G.pt(f.u,f.v+h),R=G.pt(f.u+w,f.v),B=G.pt(f.u+w,f.v+h);return{cx:(L[0]+R[0])/2,by:B[1],w:R[0]-L[0],depth:f.u+w/2+f.v+h/2};}
-function sceneFurn(){if(SC.kind=='room'&&SC.R.type!='paint'||SC.kind=='room')return S.rooms[SC.n].furn;return SC.P.props;}
-function rebuildOcc(G,list,skip){for(let u=0;u<G.cols;u++)G.occ[u].fill(null);list.forEach(f=>{if(f===skip)return;const d=FDEF[f.k];if(!d||d.flat)return;fTiles(f).forEach(([u,v])=>{if(G.in(u,v))G.occ[u][v]=f;});});
- if(SC.R&&SC.R.type=='paint')(SC.R.block||[]).forEach(([u,v])=>{if(G.in(u,v))G.occ[u][v]='x';});}
+function sceneFurn(){return SC.kind=='room'?S.rooms[SC.n].furn:SC.P.props;}
+function rebuildOcc(G,list,skip){for(let u=0;u<G.cols;u++)G.occ[u].fill(null);if(!list)return;list.forEach(f=>{if(f===skip)return;const d=FDEF[f.k];if(!d||d.flat)return;fTiles(f).forEach(([u,v])=>{if(G.in(u,v))G.occ[u][v]=f;});});
+ }
 function canPlace(G,f,skip){const T=fTiles(f);if(!T.every(([u,v])=>G.floor(u,v)))return false;const z=G.zone[T[0][0]][T[0][1]];
  if(!T.every(([u,v])=>G.zone[u][v]==z))return false;if(FDEF[f.k].flat)return true;
- if(!T.every(([u,v])=>!G.occ[u][v]||G.occ[u][v]===skip))return false;const E=SC.R&&SC.R.entry;if(E&&T.some(([u,v])=>u==E.t[0]&&v==E.t[1]))return false;return true;}
+ if(!T.every(([u,v])=>!G.occ[u][v]||G.occ[u][v]===skip))return false;if(T.some(([u,v])=>G.keep.has(u*512+v)))return false;return true;}
 // where a tenant stands to use f, and where the sprite is drawn while using it
 function usePoint(G,f){const d=FDEF[f.k],U=d.use;if(!U)return null;const [w,h]=fpOf(f),b=fBase(G,f);
+ if(U.act=='dj'){const st=[[f.u+1,f.v-1],[f.u+2,f.v-1]].filter(([u,v])=>G.floor(u,v));const p=G.pt(f.u+w/2,f.v-.45);return{f,act:'dj',pose:'dj',stand:st,draw:p,depth:f.u+w/2+f.v-.4,face:'right',behind:1};}
  const front=[];if(f.r){for(let j=0;j<h;j++)front.push([f.u+w,f.v+j]);}else{for(let i=0;i<w;i++)front.push([f.u+i,f.v+h]);}
  const side=[];for(let i=-1;i<=w;i++)for(let j=-1;j<=h;j++){if(i>=0&&i<w&&j>=0&&j<h)continue;if((i<0||i>=w)&&(j<0||j>=h))continue;side.push([f.u+i,f.v+j]);}
- const cand=[...front,...side.filter(p=>!front.some(q=>q[0]==p[0]&&q[1]==p[1]))].filter(([u,v])=>G.free(u,v));
+ const z=G.zone[f.u]&&G.zone[f.u][f.v],behind=([u,v])=>f.r?u<f.u:v<f.v;
+ const cand=[...front,...side.filter(p=>!front.some(q=>q[0]==p[0]&&q[1]==p[1])&&!behind(p))].filter(([u,v])=>G.free(u,v)&&G.zone[u][v]==z);
  const dx=(U.dx||0)*(f.r?-1:1);return{f,act:U.act,pose:U.pose,stand:cand,draw:[b.cx+dx,b.by+(U.dy||0)],depth:b.depth+(U.pose=='in'?-.05:.05),clip:U.clip,back:U.back,pull:U.pull,
   face:f.r?'left':'right'};}
 
@@ -170,7 +176,7 @@ function drawProc(g,G,f,time){const b=fBase(G,f),[w,h]=fpOf(f);
 
 // ---------------- sprites ----------------
 function drawFurn(g,G,f,alpha,hl,time){const d=FDEF[f.k];if(!d)return;if(d.proc){drawProc(g,G,f,time);return;}const i=img(furnSrc(f.k));if(!ok(i))return;const b=fBase(G,f);
- const k=(SC.R&&SC.R.TW?SC.R.TW:90)/90,w=i.naturalWidth/3*2*k,h=i.naturalHeight/3*2*k,x=b.cx,y=b.by+(d.oy||0)*k;
+ const k=(G.k||1)*(d.sc||1),w=i.naturalWidth/3*2*k,h=i.naturalHeight/3*2*k,x=b.cx,y=b.by+(d.oy||0)*k;
  if(!d.flat){const sh=g.createRadialGradient(x,y-b.w*.12,0,x,y-b.w*.12,b.w*.55);sh.addColorStop(0,'rgba(8,6,14,.42)');sh.addColorStop(1,'rgba(8,6,14,0)');g.save();g.translate(x,y-b.w*.12);g.scale(1,.5);g.fillStyle=sh;g.beginPath();g.arc(0,0,b.w*.55,0,7);g.fill();g.restore();}
  g.save();if(alpha!=null)g.globalAlpha=alpha;g.imageSmoothingQuality='high';g.translate(x,y);if(f.r)g.scale(-1,1);if(hl){g.shadowColor='rgba(255,236,140,.95)';g.shadowBlur=12*DPR();}g.drawImage(i,-w/2,-h,w,h);g.restore();}
 function footprint(g,G,f,okc){fTiles(f).forEach(([u,v])=>{poly(g,tileQuad(G,u,v));g.fillStyle=okc?'rgba(90,230,120,.35)':'rgba(255,80,80,.38)';g.fill();g.strokeStyle=okc?'rgba(140,255,170,.9)':'rgba(255,120,120,.9)';g.lineWidth=2;g.stroke();});}
@@ -188,7 +194,7 @@ const THEME={Ares:['lift','run','pull','punch','stretch'],Zayne:['read','tv','dj
 // usable things in the current scene: placed furniture + painted spots
 function usables(){const L=[],G=SC.G;
  sceneFurn().forEach(f=>{const U=usePoint(G,f);if(U&&U.stand.length)L.push(U);});
- if(SC.R&&SC.R.spots)SC.R.spots.forEach(s=>{const st=[s.t].filter(([u,v])=>G.floor(u,v));L.push({spot:s,act:s.act,pose:s.pose,stand:st.length?st:[s.t],draw:[s.x,s.y],depth:s.depth!=null?s.depth:s.t[0]+s.t[1]+1.05,clip:s.clip,face:s.face||'right',back:s.back});});
+ if(SC.kind=='room'&&SC.R.spots)SC.R.spots.forEach(s=>{const at=s.at||[s.t[0]+.5,s.t[1]+.5];L.push({spot:s,act:s.act,pose:s.pose,stand:[s.t],draw:G.pt(...at),depth:at[0]+at[1]+.6,clip:s.clip,face:s.face||'right',back:s.back,dur:s.act=='sleep'?14:null});});
  return L;}
 
 // ---------------- tenant entities ----------------
@@ -205,16 +211,18 @@ function startUse(t,U,then){t.state='use';t.U=U;t.onIt=ON_POSES.includes(U.pose)
  const ic={fridge:'food',cook:'food',sleep:'zz',tv:'note',read:'note',dj:'note',bath:'drop',shower:'drop',wash:'drop',toilet:'drop',run:'fit',lift:'fit',stretch:'fit',pull:'fit',punch:'fit',sit:'heart'}[U.act];
  if(ic)t.bubble={k:ic,t:U.pose=='sleep'||U.pose=='dj'?999:3.2};
  if(U.f&&U.act=='fridge')t.fridgeOpen=1.2;
- t.thenUse=then||null;}
+ t.thenUse=then||null;if(t.onUseStart){const f=t.onUseStart;t.onUseStart=null;setTimeout(f,450);}}
 function endUse(t){const U=t.U;if(U&&NEED_OF[U.act]&&SC.kind=='room'){const q=needs(t.n);q[NEED_OF[U.act]]=Math.min(100,q[NEED_OF[U.act]]+(U.act=='sleep'?60:45));if(U.act=='fridge'||U.act=='cook'){const fr=S.rooms[t.n].fridge;const k=Object.keys(fr).find(q=>fr[q]>0);/* the tenant snacks from stock only when you feed them; idle snacking is free */}}
  t.state='idle';t.U=null;t.onIt=false;t.bubble=t.bubble&&t.bubble.t>50?null:t.bubble;t.idle=1.2+Math.random()*2.5;const th=t.thenUse;t.thenUse=null;th&&th();}
 function halt(t){if(!t)return;if(t.state=='use'&&t.onIt){t.onIt=false;}t.path=[];t.onArrive=null;t.U=null;t.state='idle';t.bubble=null;t.idle=4;}
 // pick something to do (needs + schedule + workplace)
 function think(t){const G=SC.G,n=t.n,L=usables();
+ if(t.transit){const E=t.transit;t.transit=null;if(!goTo(t,E.t,()=>{t.state='out';t.outT=0;t.outV=E.out;t.after=()=>{delete TN[t.n];};}))delete TN[t.n];return;}
+ if(t.leaving)return;
  if(SC.kind=='place'){const p=SC.p;
   if(p=='club'&&n=='Zayne'){const U=L.find(u=>u.act=='dj');if(U&&goUse(t,U))return;}
   if(p=='gym'&&n=='Ares'){// coaching: walk up to a gym-goer, cheer them on
-   const ex=EX.filter(e=>!e.walk);if(ex.length&&Math.random()<.85){const e=rnd(ex),c=[[1,0],[-1,0],[0,1],[0,-1]].map(([a,b])=>[e.u+a,e.v+b]).filter(([u,v])=>G.free(u,v));
+   const ex=EX.filter(e=>!e.walk);if(ex.length&&Math.random()<.85){const e=rnd(ex),c0=[[1,0],[0,1],[1,1]].map(([a,b])=>[e.u+a,e.v+b]).filter(([u,v])=>G.free(u,v)),c=c0.length?c0:[[-1,0],[0,-1]].map(([a,b])=>[e.u+a,e.v+b]).filter(([u,v])=>G.free(u,v));
     if(c.length&&goTo(t,rnd(c),()=>{t.state='use';t.U={act:'coach',pose:'coach',stand:[]};t.onIt=false;t.useT=5+Math.random()*3;t.bubble={k:'note',t:2.5};t.coachOf=e;}))return;}}
   if(p=='club'){if(Math.random()<.7){const df=SC.P.dance;if(df){const tiles=[];for(let u=df[0];u<df[0]+df[2];u++)for(let v=df[1];v<df[1]+df[3];v++)if(G.free(u,v))tiles.push([u,v]);if(tiles.length&&goTo(t,rnd(tiles),()=>{t.state='use';t.U={act:'dance',pose:'dance',stand:[]};t.onIt=false;t.useT=8+Math.random()*6;t.bubble={k:'note',t:2};}))return;}}}
   const want=p=='gym'?['run','lift','stretch','pull','punch']:p=='park'?['sit']:p=='cafe'||p=='restaurant'?['sit']:p=='club'?['sit']:[];
@@ -251,7 +259,7 @@ function updT(t,dt){if(t.emoT>0){t.emoT-=dt;if(t.emoT<=0)t.emo=null;}if(t.bubble
 
 // ---------------- chibi drawing (the user's sheet sprites only) ----------------
 const SIT_NATIVE='left'; // the sheets' sitting poses face down-left
-function sitImg(n){const a=tImg(n,'emote_sitns_hd.png');return ok(a)?a:tImg(n,'emote_sit_hd.png');}
+function sitImg(n){if(TENANTS[n].sitns){const a=tImg(n,'emote_sitns_hd.png');if(ok(a))return a;}return tImg(n,'emote_sit_hd.png');}
 function bubbleDraw(g,t,x,y,H,time){const b=t.bubble;if(!b)return;const T=TENANTS[t.n],bx=x+H*.32,by=y-H*1.08+Math.sin(time*3)*2,r=H*.16;
  g.save();g.beginPath();g.ellipse(bx,by,r*1.15,r,0,0,7);g.fillStyle='rgba(255,255,255,.95)';g.fill();g.strokeStyle='rgba(42,26,32,.75)';g.lineWidth=1.6;g.stroke();
  g.beginPath();g.arc(bx-r*.9,by+r*1.05,r*.2,0,7);g.fill();g.stroke();g.beginPath();g.arc(bx-r*1.25,by+r*1.45,r*.11,0,7);g.fill();g.stroke();
@@ -295,8 +303,10 @@ let EX=[];
 function spawnExtras(){EX=[];if(SC.kind!='place')return;const G=SC.G,p=SC.p,P=SC.P;if(!P.extras)return;const h=hour();
  if(p=='gym'&&(h<6||h>=23))return;if(p=='club'&&!(h>=20||h<4))return;
  const cast=p=='gym'?GYMCAST:CLUBCAST,L=usables();
- P.extras.forEach((s,i)=>{const c=cast.find(q=>q.n==s.n);if(!c)return;const e={c,u:s.t[0],v:s.t[1],fu:s.t[0]+.5,fv:s.t[1]+.5,act:s.act||c.act,flip:s.flip||0,walk:0,path:[],timer:10+Math.random()*25,home:s.t.slice(),U:null,x:0,y:0};
-  if(s.on){const U=L.find(u=>u.f&&u.f.k==s.on&&(s.oi==null||P.props.indexOf(u.f)==s.oi));if(U){e.U=U.f;e.draw=U.draw;e.depth=U.depth;e.flip=U.f.r?1:0;}}
+ P.extras.forEach((s,i)=>{const c=cast.find(q=>q.n==s.n);if(!c)return;let U=null,t=s.t;
+  if(s.on){U=L.find(u=>u.f&&u.f.k==s.on&&(s.oi==null||P.props.indexOf(u.f)==s.oi));if(!U)return;t=[U.f.u,U.f.v];}
+  const e={c,u:t[0],v:t[1],fu:t[0]+.5,fv:t[1]+.5,act:s.act||c.act,flip:s.flip||0,walk:0,path:[],timer:10+Math.random()*25,home:t.slice(),U:null,x:0,y:0};
+  if(U){e.U=U.f;e.draw=U.draw;e.depth=U.depth;e.flip=U.f.r?1:0;}
   if(!e.U)G.occ[e.u][e.v]=G.occ[e.u][e.v]||e;EX.push(e);});}
 function updEx(e,dt,time){if(e.walk){const [nu,nv]=e.path[0]||[e.u,e.v],tx=nu+.5,ty=nv+.5,du=tx-e.fu,dv=ty-e.fv,d=Math.hypot(du,dv),sp=1.6*dt;if(Math.abs(du-dv)>.01)e.flip=du-dv<0?1:0;
   if(d<=sp){e.fu=tx;e.fv=ty;e.u=nu;e.v=nv;e.path.shift();if(!e.path.length){e.walk=0;e.timer=12+Math.random()*30;SC.G.occ[e.u][e.v]=SC.G.occ[e.u][e.v]||e;}}else{e.fu+=du/d*sp;e.fv+=dv/d*sp;}return;}
