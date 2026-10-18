@@ -1,0 +1,5 @@
+assets/src/
+assets/ares/cg_full_4x.png
+__pycache__/
+*.pyc
+shots/tmp*

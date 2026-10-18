@@ -1,0 +1,130 @@
+{
+"expr_normal": [
+121,
+155
+],
+"expr_smile": [
+115,
+155
+],
+"expr_teasing": [
+114,
+155
+],
+"expr_blushing": [
+114,
+155
+],
+"expr_angry": [
+121,
+154
+],
+"expr_serious": [
+115,
+154
+],
+"expr_surprised": [
+114,
+154
+],
+"expr_sad": [
+114,
+154
+],
+"chibi_front": [
+58,
+103
+],
+"chibi_right": [
+52,
+106
+],
+"chibi_back": [
+57,
+103
+],
+"chibi_left": [
+59,
+109
+],
+"walk_0": [
+49,
+99
+],
+"walk_1": [
+45,
+97
+],
+"walk_2": [
+44,
+95
+],
+"walk_3": [
+43,
+96
+],
+"walk_4": [
+43,
+96
+],
+"walk_5": [
+46,
+95
+],
+"walk_6": [
+42,
+96
+],
+"walk_7": [
+48,
+94
+],
+"icon_smile": [
+15,
+22
+],
+"icon_blush": [
+23,
+26
+],
+"icon_angry": [
+23,
+23
+],
+"icon_surprised": [
+18,
+30
+],
+"icon_happy": [
+24,
+30
+],
+"emote_idle": [
+62,
+100
+],
+"emote_smile": [
+64,
+98
+],
+"emote_blush": [
+66,
+97
+],
+"emote_angry": [
+60,
+92
+],
+"emote_surprised": [
+64,
+98
+],
+"emote_happy": [
+61,
+98
+],
+"emote_sit": [
+103,
+99
+]
+}

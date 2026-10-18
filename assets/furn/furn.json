@@ -1,0 +1,754 @@
+{
+ "furn": {
+  "fridge": {
+   "n": "White fridge",
+   "cat": "kitchen",
+   "price": 60,
+   "act": "fridge",
+   "size": [
+    27,
+    64
+   ]
+  },
+  "fridge2": {
+   "n": "Twin-door fridge",
+   "cat": "kitchen",
+   "price": 80,
+   "act": "fridge",
+   "size": [
+    25,
+    65
+   ]
+  },
+  "fridge_glass": {
+   "n": "Glass drinks fridge",
+   "cat": "kitchen",
+   "price": 90,
+   "act": "fridge",
+   "size": [
+    50,
+    94
+   ]
+  },
+  "sink": {
+   "n": "Sink counter",
+   "cat": "kitchen",
+   "price": 40,
+   "act": null,
+   "size": [
+    61,
+    60
+   ]
+  },
+  "sofa_red": {
+   "n": "Red velvet sofa",
+   "cat": "living",
+   "price": 70,
+   "act": "sit",
+   "size": [
+    70,
+    49
+   ]
+  },
+  "sofa_cream": {
+   "n": "Cream sofa",
+   "cat": "living",
+   "price": 65,
+   "act": "sit",
+   "size": [
+    58,
+    53
+   ]
+  },
+  "rug_red": {
+   "n": "Red rug",
+   "cat": "living",
+   "price": 20,
+   "act": null,
+   "size": [
+    74,
+    54
+   ]
+  },
+  "armchair": {
+   "n": "Red armchair",
+   "cat": "living",
+   "price": 35,
+   "act": "sit",
+   "size": [
+    34,
+    35
+   ]
+  },
+  "lamp": {
+   "n": "Floor lamp",
+   "cat": "living",
+   "price": 18,
+   "act": null,
+   "size": [
+    26,
+    58
+   ]
+  },
+  "pc_desk": {
+   "n": "Gaming desk",
+   "cat": "living",
+   "price": 60,
+   "act": "tv",
+   "size": [
+    62,
+    70
+   ]
+  },
+  "bed_red": {
+   "n": "Red & black bed",
+   "cat": "bedroom",
+   "price": 90,
+   "act": "sleep",
+   "size": [
+    94,
+    75
+   ]
+  },
+  "couch_red": {
+   "n": "Red couch",
+   "cat": "bedroom",
+   "price": 60,
+   "act": "sit",
+   "size": [
+    81,
+    64
+   ]
+  },
+  "wardrobe": {
+   "n": "Glass-front wardrobe",
+   "cat": "bedroom",
+   "price": 55,
+   "act": "storage",
+   "size": [
+    55,
+    84
+   ]
+  },
+  "wardrobe_black": {
+   "n": "Black double wardrobe",
+   "cat": "bedroom",
+   "price": 50,
+   "act": "storage",
+   "size": [
+    52,
+    55
+   ]
+  },
+  "wardrobe_wood": {
+   "n": "Wood wardrobe",
+   "cat": "bedroom",
+   "price": 45,
+   "act": "storage",
+   "size": [
+    45,
+    86
+   ]
+  },
+  "lamp2": {
+   "n": "Standing lamp",
+   "cat": "bedroom",
+   "price": 15,
+   "act": null,
+   "size": [
+    28,
+    61
+   ]
+  },
+  "armor": {
+   "n": "Red armour statue",
+   "cat": "decor",
+   "price": 85,
+   "act": null,
+   "size": [
+    28,
+    85
+   ]
+  },
+  "plant_big": {
+   "n": "Big potted palm",
+   "cat": "decor",
+   "price": 25,
+   "act": null,
+   "size": [
+    52,
+    80
+   ]
+  },
+  "palm": {
+   "n": "Palm in white pot",
+   "cat": "decor",
+   "price": 22,
+   "act": null,
+   "size": [
+    48,
+    79
+   ]
+  },
+  "plant": {
+   "n": "Leafy plant",
+   "cat": "decor",
+   "price": 18,
+   "act": null,
+   "size": [
+    56,
+    84
+   ]
+  },
+  "statue_red": {
+   "n": "Knight statue",
+   "cat": "decor",
+   "price": 70,
+   "act": null,
+   "size": [
+    39,
+    82
+   ]
+  },
+  "statue_white": {
+   "n": "Marble statue",
+   "cat": "decor",
+   "price": 70,
+   "act": null,
+   "size": [
+    39,
+    83
+   ]
+  },
+  "globe": {
+   "n": "Globe on desk",
+   "cat": "decor",
+   "price": 30,
+   "act": null,
+   "size": [
+    51,
+    72
+   ]
+  },
+  "lamp_warm": {
+   "n": "Warm floor lamp",
+   "cat": "decor",
+   "price": 20,
+   "act": null,
+   "size": [
+    45,
+    90
+   ]
+  },
+  "roses": {
+   "n": "Red-flower plant",
+   "cat": "decor",
+   "price": 24,
+   "act": null,
+   "size": [
+    53,
+    87
+   ]
+  },
+  "bathtub": {
+   "n": "White bathtub",
+   "cat": "bath",
+   "price": 70,
+   "act": "bath",
+   "size": [
+    78,
+    62
+   ]
+  },
+  "shower": {
+   "n": "Glass shower",
+   "cat": "bath",
+   "price": 80,
+   "act": "bath",
+   "size": [
+    55,
+    99
+   ]
+  },
+  "tub_vanity": {
+   "n": "Bath vanity",
+   "cat": "bath",
+   "price": 40,
+   "act": null,
+   "size": [
+    61,
+    58
+   ]
+  },
+  "vanity_black": {
+   "n": "Black vanity",
+   "cat": "bath",
+   "price": 45,
+   "act": null,
+   "size": [
+    49,
+    70
+   ]
+  },
+  "toilet": {
+   "n": "Toilet",
+   "cat": "bath",
+   "price": 30,
+   "act": null,
+   "size": [
+    39,
+    59
+   ]
+  },
+  "cabinet": {
+   "n": "Bathroom cabinet",
+   "cat": "bath",
+   "price": 30,
+   "act": "storage",
+   "size": [
+    46,
+    60
+   ]
+  },
+  "powerrack": {
+   "n": "Power rack",
+   "cat": "gym",
+   "price": 150,
+   "act": "squat",
+   "size": [
+    86,
+    124
+   ]
+  },
+  "lockers": {
+   "n": "Red gym lockers",
+   "cat": "gym",
+   "price": 40,
+   "act": "storage",
+   "size": [
+    44,
+    82
+   ]
+  },
+  "speedbag": {
+   "n": "Speed bag stand",
+   "cat": "gym",
+   "price": 35,
+   "act": "punch",
+   "size": [
+    27,
+    53
+   ]
+  },
+  "pullup": {
+   "n": "Pull-up tower",
+   "cat": "gym",
+   "price": 70,
+   "act": "pull",
+   "size": [
+    43,
+    77
+   ]
+  },
+  "gym_cabinet": {
+   "n": "Gym cabinet",
+   "cat": "gym",
+   "price": 45,
+   "act": "storage",
+   "size": [
+    35,
+    77
+   ]
+  },
+  "machine_red": {
+   "n": "Red cardio machine",
+   "cat": "gym",
+   "price": 100,
+   "act": "run",
+   "size": [
+    40,
+    85
+   ]
+  },
+  "ball": {
+   "n": "Exercise ball",
+   "cat": "gym",
+   "price": 12,
+   "act": "stretch",
+   "size": [
+    48,
+    48
+   ]
+  },
+  "kettlebell": {
+   "n": "Kettlebell",
+   "cat": "gym",
+   "price": 10,
+   "act": "lift",
+   "size": [
+    26,
+    31
+   ]
+  },
+  "treadmill": {
+   "n": "Treadmill",
+   "cat": "gym",
+   "price": 110,
+   "act": "run",
+   "size": [
+    110,
+    80
+   ]
+  },
+  "bench_blue": {
+   "n": "Blue flat bench",
+   "cat": "gym",
+   "price": 30,
+   "act": "lift",
+   "size": [
+    60,
+    42
+   ]
+  },
+  "bookcase_red": {
+   "n": "Red bookcase",
+   "cat": "study",
+   "price": 60,
+   "act": "read",
+   "size": [
+    69,
+    107
+   ]
+  },
+  "bookshelf": {
+   "n": "Tall bookshelf",
+   "cat": "study",
+   "price": 60,
+   "act": "read",
+   "size": [
+    68,
+    105
+   ]
+  },
+  "bookshelf2": {
+   "n": "Wood bookshelf",
+   "cat": "study",
+   "price": 55,
+   "act": "read",
+   "size": [
+    53,
+    108
+   ]
+  },
+  "desk": {
+   "n": "Wood writing desk",
+   "cat": "study",
+   "price": 55,
+   "act": "read",
+   "size": [
+    93,
+    88
+   ]
+  },
+  "chair_red": {
+   "n": "Red desk chair",
+   "cat": "study",
+   "price": 20,
+   "act": "sit",
+   "size": [
+    44,
+    40
+   ]
+  },
+  "lamp_floor": {
+   "n": "Brass floor lamp",
+   "cat": "study",
+   "price": 18,
+   "act": null,
+   "size": [
+    28,
+    74
+   ]
+  },
+  "rug_ornate": {
+   "n": "Ornate red rug",
+   "cat": "study",
+   "price": 30,
+   "act": null,
+   "size": [
+    104,
+    62
+   ]
+  },
+  "cabinet_glass": {
+   "n": "Display cabinet",
+   "cat": "study",
+   "price": 50,
+   "act": "storage",
+   "size": [
+    47,
+    92
+   ]
+  },
+  "tv": {
+   "n": "Big TV + console",
+   "cat": "living",
+   "price": 90,
+   "act": "tv",
+   "size": [
+    55,
+    101
+   ]
+  },
+  "table_marble": {
+   "n": "Marble coffee table",
+   "cat": "living",
+   "price": 35,
+   "act": null,
+   "size": [
+    84,
+    70
+   ]
+  },
+  "table_dark": {
+   "n": "Dark coffee table",
+   "cat": "living",
+   "price": 30,
+   "act": null,
+   "size": [
+    78,
+    55
+   ]
+  },
+  "sofa_grey": {
+   "n": "Grey sofa",
+   "cat": "living",
+   "price": 55,
+   "act": "sit",
+   "size": [
+    61,
+    52
+   ]
+  },
+  "stove": {
+   "n": "Oven range",
+   "cat": "kitchen",
+   "price": 45,
+   "act": "cook",
+   "size": [
+    53,
+    60
+   ]
+  },
+  "island": {
+   "n": "Marble kitchen island",
+   "cat": "kitchen",
+   "price": 85,
+   "act": "cook",
+   "size": [
+    95,
+    97
+   ]
+  },
+  "stools": {
+   "n": "Red bar stools",
+   "cat": "kitchen",
+   "price": 25,
+   "act": "sit",
+   "size": [
+    66,
+    72
+   ]
+  },
+  "counter": {
+   "n": "Double sink counter",
+   "cat": "kitchen",
+   "price": 50,
+   "act": null,
+   "size": [
+    81,
+    82
+   ]
+  },
+  "dumbbells": {
+   "n": "Dumbbell set",
+   "cat": "gym",
+   "price": 60,
+   "act": "lift",
+   "size": [
+    96,
+    66
+   ]
+  },
+  "benchpress": {
+   "n": "Bench press station",
+   "cat": "gym",
+   "price": 90,
+   "act": "lift",
+   "size": [
+    119,
+    95
+   ]
+  },
+  "barbells": {
+   "n": "Barbell pair",
+   "cat": "gym",
+   "price": 30,
+   "act": "lift",
+   "size": [
+    23,
+    27
+   ]
+  },
+  "bench": {
+   "n": "Flat weight bench",
+   "cat": "gym",
+   "price": 45,
+   "act": "lift",
+   "size": [
+    80,
+    59
+   ]
+  },
+  "abbench": {
+   "n": "Curved ab bench",
+   "cat": "gym",
+   "price": 35,
+   "act": "stretch",
+   "size": [
+    57,
+    51
+   ]
+  }
+ },
+ "food": {
+  "noodles": {
+   "n": "Noodle bowl",
+   "price": 6,
+   "size": [
+    34,
+    34
+   ]
+  },
+  "hotpot": {
+   "n": "Hot pot",
+   "price": 9,
+   "size": [
+    28,
+    36
+   ]
+  },
+  "grill": {
+   "n": "Grill platter",
+   "price": 12,
+   "size": [
+    41,
+    31
+   ]
+  },
+  "paella": {
+   "n": "Paella",
+   "price": 10,
+   "size": [
+    45,
+    36
+   ]
+  },
+  "sushi": {
+   "n": "Sushi plates",
+   "price": 11,
+   "size": [
+    51,
+    35
+   ]
+  },
+  "steak": {
+   "n": "Steak box",
+   "price": 14,
+   "size": [
+    62,
+    41
+   ]
+  },
+  "wine": {
+   "n": "Red wine",
+   "price": 9,
+   "size": [
+    16,
+    47
+   ]
+  },
+  "water": {
+   "n": "Water bottle",
+   "price": 1,
+   "size": [
+    19,
+    63
+   ]
+  },
+  "jar": {
+   "n": "Pickle jar",
+   "price": 3,
+   "size": [
+    25,
+    39
+   ]
+  },
+  "sauce": {
+   "n": "Hot sauce",
+   "price": 2,
+   "size": [
+    31,
+    46
+   ]
+  },
+  "rice": {
+   "n": "Rice cooker",
+   "price": 8,
+   "size": [
+    38,
+    48
+   ]
+  },
+  "coffee": {
+   "n": "Coffee cup",
+   "price": 2,
+   "size": [
+    23,
+    27
+   ]
+  },
+  "whiskey": {
+   "n": "Whiskey",
+   "price": 12,
+   "size": [
+    26,
+    63
+   ]
+  },
+  "juice": {
+   "n": "Orange juice",
+   "price": 3,
+   "size": [
+    25,
+    57
+   ]
+  },
+  "pizza": {
+   "n": "Pizza box",
+   "price": 9,
+   "size": [
+    63,
+    48
+   ]
+  },
+  "bento": {
+   "n": "Bento box",
+   "price": 7,
+   "size": [
+    41,
+    33
+   ]
+  }
+ }
+}
