@@ -1,7 +1,7 @@
 'use strict';
 // Lumen Residences — engine. Kairosoft-style portrait layout (game view on top, D-pad panel below),
 // Ero-Condo-style tenant loop. Dialogue system, dev panel, save and sfx follow Fantasy Town v0.0.2.3.
-const VERSION='v0.2.0',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
+const VERSION='v0.3.0',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 const DPR=()=>Math.min(3,window.devicePixelRatio||1);
@@ -16,12 +16,11 @@ const ok=i=>i&&i.complete&&i.naturalWidth>0;
 const tImg=(n,f)=>img(`assets/${TENANTS[n].dir}/${f}`);
 const EXPR={normal:'normal',smile:'smile',laugh:'smile',happy:'smile',teasing:'teasing',smirk:'teasing',blush:'blushing',blushing:'blushing',angry:'angry',serious:'serious',thinking:'serious',surprised:'surprised',sad:'sad'};
 const faceImg=(n,e='smile')=>tImg(n,`expr_${EXPR[e]||'smile'}_hd.png`);
-const furnImg=k=>img(furnSrc(k));
+const furnThumb=k=>FA.thumb(k);
 const foodImg=k=>img(`assets/furn/food_${k}_hd.png`);
 // preload what every screen needs
 for(const n of TENANT_ORDER){const T=TENANTS[n];['front','right','back','left'].forEach(d=>tImg(n,`chibi_${d}_hd.png`));for(let i=0;i<T.walkN;i++)tImg(n,`walk_${i}_hd.png`);
- ['idle','smile','blush','angry','surprised','happy','sit'].forEach(e=>tImg(n,`emote_${e}_hd.png`));if(T.sitns)tImg(n,'emote_sitns_hd.png');Object.values(T.icons).forEach(f=>tImg(n,f+'_hd.png'));faceImg(n,'normal');}
-for(const k in FURN)if(!FURN[k].item)furnImg(k);
+ ['idle','smile','blush','angry','surprised','happy','sit'].forEach(e=>tImg(n,`emote_${e}_hd.png`));if(T.sitns)tImg(n,'emote_sitns_hd.png');Object.values(T.icons).forEach(f=>tImg(n,f+'_hd.png'));faceImg(n,'normal');if(T.poses)Object.values(T.poses).forEach(f=>tImg(n,f));}
 
 // ---------------- state ----------------
 let S;
@@ -154,7 +153,7 @@ const furnAct=k=>(FURN[k]&&FURN[k].act)||(FDEF[k]&&FDEF[k].use&&FDEF[k].use.act)
 const furnName=k=>(FURN[k]&&FURN[k].n)||{djbooth:'DJ booth',speaker:'Speaker stack',barstool:'Bar stool'}[k]||k;
 function zoneLv(n,zid){const Z=TENANTS[n].zones.find(z=>z.id==zid),Rm=ROOMS[n];let lv=1;(Rm.spots||[]).forEach(s=>{if(Z.acts.includes(s.act))lv++;});
  S.rooms[n].furn.forEach(f=>{const a=furnAct(f.k);if(a&&Z.acts.includes(a))lv++;});return Math.min(5,lv);}
-function furnTop(f){const b=fBase(SC.G,f),d=FDEF[f.k]||{},k=SC.G.k||1;let h=80;if(!d.proc){const i=furnImg(f.k);if(ok(i))h=i.naturalHeight/3*2*k;}else h=f.k=='speaker'?118:60;return[b.cx,b.by-h*.45];}
+function furnTop(f){const b=fBase(SC.G,f),d=FDEF[f.k]||{},h=(d.h||60)*SC.G.eu[0]/45;return[b.cx,b.by-b.w*.25-h*.5];}
 function targets(){const L=[],G=SC.G;for(const n in TN){const t=TN[n];if(t.alpha<.5)continue;L.push({type:'tenant',n,x:t.x,y:t.y-SC.ch*.45,label:n});}
  if(SC.kind=='room'){const n=SC.n,Rm=SC.R;
   (Rm.spots||[]).forEach(s=>{const [x,y]=G.pt(...(s.at||[s.t[0]+.5,s.t[1]+.5]));L.push({type:'spot',s,x,y:y-24,act:s.act,label:s.n});});
@@ -182,7 +181,10 @@ function drawWorld(g,time){const [vw,vh]=viewSize(),G=SC.G;g.save();g.translate(
  list.forEach((f,i)=>{if(decor&&decor.from===f)return;const hl=hover&&(hover.type=='furn'||hover.type=='prop')&&hover.f===f;E.push({depth:FDEF[f.k]&&FDEF[f.k].flat?-1:fBase(G,f).depth,d:()=>drawFurn(g,G,f,null,hl,time)});});
  if(SC.kind=='room'&&SC.R.type=='tile')lowWalls(G,SC.R,SC.R.theme).forEach(w=>E.push({depth:w.depth,d:()=>w.d(g)}));
  for(const n in TN){const t=TN[n];E.push({depth:tDepth(t),d:()=>drawChibiT(g,t,time,(hover&&hover.type=='tenant'&&hover.n==n)||sel==n)});}
+ for(const n in TN){const t=TN[n],U=t.U;if(t.state=='use'&&U&&U.f&&U.pose=='fridge'){const el=(t.useDur||6)-t.useT,k=Math.min(1,el/.4,Math.max(0,t.useT-.2)/.4);E.push({depth:fBase(G,U.f).depth+.3,d:()=>drawFridgeDoor(g,G,U.f,k)});}}
+ for(const n in TN){const t=TN[n],U=t.U;if(t.state=='use'&&t.onIt&&U&&U.f&&U.gp&&!U.away)E.push({depth:U.depth+.01,d:()=>drawFurn(g,G,U.f,null,false,time,U.gp)});}
  EX.forEach(e=>E.push({depth:e.U?e.depth:e.fu+e.fv,d:()=>drawEx(g,e,time,hover&&hover.type=='npc'&&hover.e===e)}));
+ EX.forEach(e=>{const U=e.UP;if(U&&U.gp&&!U.away&&ON_POSES.includes(U.pose))E.push({depth:U.depth+.01,d:()=>drawFurn(g,G,U.f,null,false,time,U.gp)});});
  if(df){footprint(g,G,df,canPlace(G,df,decor.from));E.push({depth:fBase(G,df).depth+.01,d:()=>drawFurn(g,G,df,.78,false,time)});}
  E.sort((a,b)=>a.depth-b.depth).forEach(e=>e.d());
  if(SC.kind=='place'&&nightF()>0&&!SC.P.neon){g.fillStyle=`rgba(20,20,70,${nightF()*.28})`;g.fillRect(-500,-300,2000,1400);}
@@ -232,9 +234,12 @@ function updateInfo(){const ic=$('infoIc'),it=$('infoT');let html,icon=null;
 // ---------------- dialogue (Fantasy Town's system: typewriter, Skip / Hide / Next, face badge) ----------------
 const dlg={on:false,lines:[],i:0,ch:0,name:'',hidden:false,after:null,key:''};
 function startDialogue(name,lines,after){if(!lines||!lines.length){after&&after();return;}Object.assign(dlg,{on:true,lines,i:0,ch:0,name,hidden:false,after:after||null});$('dlg').style.display='block';document.body.classList.add('dlgon');$('dlgName').textContent=name.toUpperCase();for(const k in keys)keys[k]=0;showLine();}
-function layoutCG(){const n=dlg.name,b=tImg(n,TENANTS[n].cg),pc=$('dlgPortrait');if(!ok(b)){b.onload=()=>dlg.on&&layoutCG();return;}
- const vw=innerWidth,boxTop=$('dlgBox').getBoundingClientRect().top,th=TENANTS[n].thigh,ar=b.naturalWidth/b.naturalHeight;let H=(boxTop-14)/th,w=H*ar;if(w>vw){w=vw;H=w/ar;}const top=boxTop-th*H,d=DPR();
- const key=n+'|'+Math.round(w)+'|'+d;if(dlg.key!=key){dlg.key=key;pc.width=Math.round(w*d);pc.height=Math.round(H*d);const g=pc.getContext('2d');g.clearRect(0,0,pc.width,pc.height);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(b,0,0,pc.width,pc.height);}
+// mood -> one of the sheet's dialogue poses (tenants with a pose set); others keep their single CG
+const POSE_OF={smile:'talking',normal:'talking',happy:'laugh',laugh:'laugh',teasing:'teasing',smirk:'teasing',blush:'embarrassed',blushing:'embarrassed',angry:'angry',thinking:'thinking',sad:'thinking',surprised:'surprised',serious:'serious'};
+function cgFor(n){const T=TENANTS[n],l=dlg.lines&&dlg.lines[dlg.i];if(T.poses&&l){const k=POSE_OF[l.e]||'talking',f=T.poses[k];if(f){const I=tImg(n,f);if(ok(I))return{b:I,th:T.pthigh,key:k};}}return{b:tImg(n,T.cg),th:T.thigh,key:'cg'};}
+function layoutCG(){const n=dlg.name,C=cgFor(n),b=C.b,pc=$('dlgPortrait');if(!ok(b)){b.onload=()=>dlg.on&&layoutCG();return;}
+ const vw=innerWidth,boxTop=$('dlgBox').getBoundingClientRect().top,th=C.th,ar=b.naturalWidth/b.naturalHeight;let H=(boxTop-14)/th,w=H*ar;if(w>vw){w=vw;H=w/ar;}const top=boxTop-th*H,d=DPR();
+ const key=n+'|'+C.key+'|'+Math.round(w)+'|'+d;if(dlg.key!=key){dlg.key=key;pc.width=Math.round(w*d);pc.height=Math.round(H*d);const g=pc.getContext('2d');g.clearRect(0,0,pc.width,pc.height);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(b,0,0,pc.width,pc.height);}
  Object.assign(pc.style,{width:w+'px',height:H+'px',top:top+'px',left:(vw-w)/2+'px',transform:'none'});}
 function showLine(){const l=dlg.lines[dlg.i],fc=$('dlgFace');layoutCG();const F=faceImg(dlg.name,l.e);
  const putFace=()=>{fc.width=F.naturalWidth;fc.height=F.naturalHeight;const g=fc.getContext('2d');g.clearRect(0,0,fc.width,fc.height);g.drawImage(F,0,0);fc.style.width='84px';fc.style.display='block';};
@@ -339,7 +344,7 @@ function confess(n){closeSheet();const r=R(n);startDialogue(n,TENANTS[n].confess
 function propose(n){closeSheet();const r=R(n);S.ring--;startDialogue(n,TENANTS[n].propose,()=>{r.engaged=1;r.engDay=S.day;r.p=Math.max(r.p,REL_P[6]);toast(`Engaged to ${n}! Talk to ${n} tomorrow for the wedding.`);emote(n,'happy');save(1);});}
 function zoneInfo(n,z){const Z=TENANTS[n].zones.find(q=>q.id==z),lv=zoneLv(n,z),items=Object.keys(FURN).filter(k=>FURN[k].act&&Z.acts.includes(FURN[k].act));
  openSheet(`<h3>${z} ZONE · ${'★'.repeat(lv)}${'☆'.repeat(5-lv)}</h3><p>${Z.desc}. Each matching item placed in ${n}'s room adds a star (max 5). Higher zones unlock more of ${n}'s zone scenes on the profile card.</p><p><i>"${TENANTS[n].zoneL[z][lv-1]}"</i></p><div class="grid3">`+
-  items.map(k=>`<button class="item" onclick="buy('${k}',1)"><span class="own">${S.inv[k]||0}</span><img src="${furnImg(k).src}"><span>${FURN[k].n}</span><span class="pr">${money(FURN[k].p)}</span></button>`).join('')+`</div><button class="mbtn blue" onclick="decorMenu()">Decorate this room</button>`);}
+  items.map(k=>`<button class="item" onclick="buy('${k}',1)"><span class="own">${S.inv[k]||0}</span><img src="${furnThumb(k)}"><span>${FURN[k].n}</span><span class="pr">${money(FURN[k].p)}</span></button>`).join('')+`</div><button class="mbtn blue" onclick="decorMenu()">Decorate this room</button>`);}
 function reception(){const left=TENANT_ORDER.length-S.unlocked.length;openSheet(`<h3>RECEPTION</h3><p>Residents pay <b>£20 a day</b> each, collected every morning at 6 AM.</p>
  <button class="mbtn gold" onclick="closeSheet();findResident()" ${left?'':'disabled'}>FIND NEW RESIDENT<small>${left?`Costs ♥ ${FIND_COST[S.unlocked.length]} · you have ♥ ${S.hearts}`:'All four units are occupied'}</small></button>
  <button class="mbtn" onclick="residents()">Resident list<small>profiles, schedules, hearts</small></button><button class="mbtn" onclick="openFloors();closeSheet()">Elevator · floor picker</button>`);}
@@ -349,14 +354,14 @@ function buyFood(k,p){if(S.money<FOOD[k].p){toast('Not enough money');sfx(180);r
 let shopCat='Gym';
 function openShop(cat){if(cat)shopCat=cat;const ks=Object.keys(FURN).filter(k=>FURN[k].cat==shopCat);
  openSheet(`<h3>FURNITURE SHOP</h3><p>Paid from rent money · you have <b>${money(S.money)}</b>. Bought items go to storage; place them with MENU → Decorate.</p><div class="tabs">${FURN_CATS.map(c=>`<button class="tab${c==shopCat?' on':''}" onclick="openShop('${c}')">${c}</button>`).join('')}</div><div class="grid3">`+
- ks.map(k=>{const F=FURN[k],own=k=='ring'?S.ring:(S.inv[k]||0);return`<button class="item" onclick="buy('${k}')"><span class="own">${own}</span><img src="${k=='ring'?RING:furnImg(k).src}"><span>${F.n}</span><span class="pr">${money(F.p)}</span>${F.act?`<small style="font-size:9px;color:#6a5a72">use: ${F.act}</small>`:''}</button>`;}).join('')+`</div>`);}
+ ks.map(k=>{const F=FURN[k],own=k=='ring'?S.ring:(S.inv[k]||0);return`<button class="item" onclick="buy('${k}')"><span class="own">${own}</span><img src="${k=='ring'?RING:furnThumb(k)}"><span>${F.n}</span><span class="pr">${money(F.p)}</span>${F.act?`<small style="font-size:9px;color:#6a5a72">use: ${F.act}</small>`:''}</button>`;}).join('')+`</div>`);}
 function buy(k,fromZone){const F=FURN[k];if(S.money<F.p){toast(`Not enough money (${money(F.p)})`);sfx(180);return;}S.money-=F.p;if(k=='ring')S.ring++;else S.inv[k]=(S.inv[k]||0)+1;sfx(900);save(1);updateHud();
- if(k!='ring'&&SC.kind=='room'){openSheet(`<h3>BOUGHT: ${F.n.toUpperCase()}</h3><div style="text-align:center"><img src="${furnImg(k).src}" style="max-height:120px"></div><button class="mbtn gold" onclick="startDecor('${k}')">Place it in ${SC.n}'s room now</button><button class="mbtn" onclick="openShop()">Keep shopping</button>`);}
+ if(k!='ring'&&SC.kind=='room'){openSheet(`<h3>BOUGHT: ${F.n.toUpperCase()}</h3><div style="text-align:center"><img src="${furnThumb(k)}" style="max-height:120px"></div><button class="mbtn gold" onclick="startDecor('${k}')">Place it in ${SC.n}'s room now</button><button class="mbtn" onclick="openShop()">Keep shopping</button>`);}
  else{toast(`Bought ${F.n}`);if(fromZone)zoneInfo(SC.n,fromZone);else openShop();}}
 // decorate: buy → place, rotate (mirror to the other iso facing), move, store
 function decorMenu(){if(SC.kind!='room'){toast('Go to a resident\'s room to decorate');return;}const n=SC.n,inv=Object.entries(S.inv).filter(([k,v])=>v>0&&FURN[k]),placed=S.rooms[n].furn;
- openSheet(`<h3>DECORATE · ${ROOMS[n].name.toUpperCase()}</h3><p>Choose an item from storage, move it with the D-pad (it snaps to the floor tiles — green fits, red is blocked), ROTATE, then PLACE.${SC.R.type=='paint'?' This apartment is painted art with its own furniture, so new pieces go on the free floor only.':''}</p><h4 style="margin:6px 0">STORAGE</h4><div class="grid3">`+(inv.map(([k,v])=>`<button class="item" onclick="startDecor('${k}')"><span class="own">${v}</span><img src="${furnImg(k).src}"><span>${FURN[k].n}</span></button>`).join('')||'<p>Empty — buy furniture in the shop.</p>')+`</div>
- <button class="mbtn gold" onclick="openShop()">Open the furniture shop</button><h4 style="margin:10px 0 6px">PLACED IN THIS ROOM</h4><div class="grid3">`+(placed.map((f,i)=>`<button class="item" onclick="pickFurn(${i})"><img src="${furnImg(f.k).src}"><span>${furnName(f.k)}</span><small style="font-size:9px">move / store</small></button>`).join('')||'<p>Nothing placed yet.</p>')+`</div>`);}
+ openSheet(`<h3>DECORATE · ${ROOMS[n].name.toUpperCase()}</h3><p>Choose an item from storage, move it with the D-pad (it snaps to the floor tiles — green fits, red is blocked), ROTATE, then PLACE.${SC.R.type=='paint'?' This apartment is painted art with its own furniture, so new pieces go on the free floor only.':''}</p><h4 style="margin:6px 0">STORAGE</h4><div class="grid3">`+(inv.map(([k,v])=>`<button class="item" onclick="startDecor('${k}')"><span class="own">${v}</span><img src="${furnThumb(k)}"><span>${FURN[k].n}</span></button>`).join('')||'<p>Empty — buy furniture in the shop.</p>')+`</div>
+ <button class="mbtn gold" onclick="openShop()">Open the furniture shop</button><h4 style="margin:10px 0 6px">PLACED IN THIS ROOM</h4><div class="grid3">`+(placed.map((f,i)=>`<button class="item" onclick="pickFurn(${i})"><img src="${furnThumb(f.k)}"><span>${furnName(f.k)}</span><small style="font-size:9px">move / store</small></button>`).join('')||'<p>Nothing placed yet.</p>')+`</div>`);}
 function startDecor(k){if(SC.kind!='room')return;if(!S.inv[k]){toast('None in storage');return;}S.inv[k]--;decor={k,r:0,from:null};closeSheet();toast('Move with the D-pad · ROTATE · PLACE');updateInfo();}
 function pickFurn(i){const f=S.rooms[SC.n].furn[i];decor={k:f.k,r:f.r||0,from:f};const [x,y]=SC.G.pt(f.u+fpOf(f)[0]/2,f.v+fpOf(f)[1]/2);cur.x=x;cur.y=y;closeSheet();toast('Move it, ROTATE, PLACE — or MENU to store it');}
 function placeDecor(){if(!decor)return;const f=decorF(),G=SC.G;if(!canPlace(G,f,decor.from)){toast("It doesn't fit there — find a free green spot");sfx(180);return;}
@@ -366,7 +371,7 @@ function cancelDecor(){if(!decor)return;if(!decor.from)S.inv[decor.k]=(S.inv[dec
 function storeDecor(){if(!decor)return;if(decor.from){const fs=S.rooms[SC.n].furn,i=fs.indexOf(decor.from);if(i>=0)fs.splice(i,1);}S.inv[decor.k]=(S.inv[decor.k]||0)+1;toast(`${furnName(decor.k)} stored`);decor=null;rebuildOcc(SC.G,sceneFurn());closeSheet();save(1);}
 
 // ---------------- MENU ----------------
-function openMenu(){if(decor){openSheet(`<h3>PLACING ${FURN[decor.k].n.toUpperCase()}</h3><button class="mbtn" onclick="decor.r^=1;closeSheet()">Rotate</button><button class="mbtn gold" onclick="closeSheet();placeDecor()">Place here</button><button class="mbtn" onclick="storeDecor()">Put it in storage</button><button class="mbtn" onclick="closeSheet();cancelDecor()">Cancel</button>`);return;}
+function openMenu(){if(decor){openSheet(`<h3>PLACING ${FURN[decor.k].n.toUpperCase()}</h3><button class="mbtn" onclick="decor.r=(decor.r+1)%4;closeSheet()">Rotate</button><button class="mbtn gold" onclick="closeSheet();placeDecor()">Place here</button><button class="mbtn" onclick="storeDecor()">Put it in storage</button><button class="mbtn" onclick="closeSheet();cancelDecor()">Cancel</button>`);return;}
  openSheet(`<h3>MENU</h3><div class="grid2">
  <button class="mbtn blue" onclick="saveSlot()">Save game<small>manual slot + autosave</small></button><button class="mbtn" onclick="loadSlot()">Load game<small>${localStorage.getItem(SLOT)?'slot 1':'no save yet'}</small></button>
  <button class="mbtn" onclick="residents()">Residents<small>tenant info</small></button><button class="mbtn gold" onclick="openShop()">Shop<small>furniture · ring</small></button>
@@ -411,7 +416,7 @@ $('ok').addEventListener('click',okPress);
 $('bFloor').onclick=()=>{if(decor){cancelDecor();toast('Cancelled');return;}floorsOpen()?closeFloors():openFloors();};
 $('bMenu').onclick=()=>openMenu();
 $('bTalk').onclick=()=>{if(decor)return placeDecor();talk(talkTarget());};
-$('bFeed').onclick=()=>{if(decor){decor.r^=1;sfx(520);return;}openFeed(talkTarget());};
+$('bFeed').onclick=()=>{if(decor){decor.r=(decor.r+1)%4;sfx(520);return;}openFeed(talkTarget());};
 addEventListener('keydown',e=>{const m={ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:'d',ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r'}[e.code];
  if(m){if(floorsOpen()&&!e.repeat)floorNav(m);else keys[m]=1;e.preventDefault();}
  if(e.code=='Enter'||e.code=='Space'){okPress();e.preventDefault();}if(e.code=='Escape'){if(sheetOpen())closeSheet();else if(floorsOpen())closeFloors();else if(decor)cancelDecor();}

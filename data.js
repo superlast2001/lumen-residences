@@ -7,7 +7,10 @@ const PLACE_N={home:'Home',gym:'Lumen Gym',cafe:'Cafe Lumière',restaurant:'Rest
 // ---------------- TENANTS ----------------
 // sz: on-screen chibi height scale; walkFace: which way the sheet's walk frames face; thigh: fraction of the CG height at mid-thigh
 const TENANTS={
-Ares:{dir:'ares',cg:'cg_full_xl.png',sitns:1,thigh:.60,walkN:7,walkFace:'right',color:'#c8323c',plate:'GYM TRAINER',
+Ares:{dir:'ares',cg:'cg_full_xl.png',sitns:1,thigh:.60,
+ // the sheet's 8 full-body dialogue poses (picked by the line's mood); pthigh = fraction of the pose height at mid-thigh
+ poses:{talking:'pose_talking_hd.webp',laugh:'pose_laugh_hd.webp',teasing:'pose_teasing_hd.webp',embarrassed:'pose_embarrassed_hd.webp',angry:'pose_angry_hd.webp',thinking:'pose_thinking_hd.webp',surprised:'pose_surprised_hd.webp',serious:'pose_serious_hd.webp'},pthigh:.66,
+walkN:7,walkFace:'right',color:'#c8323c',plate:'GYM TRAINER',
  icons:{heart:'icon_heart',happy:'icon_hearts',angry:'icon_angry',surprised:'icon_surprise',note:'icon_note'},
  title:'Personal trainer · Lumen Gym',likes:['gym','cardio'],foodLove:['steak','grill','bento','water'],foodHate:['wine','whiskey'],
  bio:'Head trainer at Lumen Gym. Loud, confident and a big brother to everyone he meets. His apartment is half bedroom, half home gym — he loves gym furniture.',
@@ -210,8 +213,8 @@ lobby:{n:'Lumen Residences · Lobby',wall:['#b95f43','#a84f3d'],trim:'#f0d3ae',t
 gym:{n:'Lumen Gym',wall:['#4a5468','#3a4254'],trim:'#d6dbe6',tex:'t23',sign:'LUMEN GYM',entry:EXIT,
  props:[F('treadmill',1,0),F('treadmill',4,0),F('machine_red',7,0),F('lockers',9,0),F('pullup',0,2,1),F('speedbag',0,4,1),F('lockers',0,6,1),
   F('bench_black',3,4),F('kettlebell',6,4),F('ball',8,4),F('rug_red',5,6),F('bench_blue',2,7),F('plant_big',0,0)],
- extras:[{n:'Mika',on:'treadmill',oi:0},{n:'Sora',on:'machine_red'},{n:'Leon',on:'pullup'},{n:'Big Dano',t:[4,3]},{n:'Tomas',t:[3,5]},{n:'Jett',t:[1,4],flip:0},
-  {n:'Coach Rin',t:[6,7]},{n:'Priya',t:[7,6]},{n:'Gus',t:[8,8],flip:1}],
+ extras:[{n:'Mika',on:'treadmill',oi:0},{n:'Sora',on:'machine_red'},{n:'Leon',on:'pullup'},{n:'Big Dano',t:[4,3]},{n:'Tomas',t:[3,6]},{n:'Jett',t:[1,4],flip:0},
+  {n:'Coach Rin',t:[6,7]},{n:'Gus',t:[8,8],flip:1}],
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'train',n:'Train together',t:[5,8],kind:'train'}]},
 cafe:{n:'Cafe Lumière',wall:['#e9c9a0','#d9b48a'],trim:'#fff4dc',tex:'t12',sign:'CAFE LUMIÈRE',entry:EXIT,
  props:[F('counter',2,0),F('fridge2',4,0),F('lamp_warm',6,0),F('plant_palm',9,0),F('plant',0,5,1),F('table_coffee',5,5),F('chair_red',5,4),F('chair_red',6,4),F('chair_red',4,5,1),
