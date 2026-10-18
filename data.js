@@ -191,28 +191,30 @@ const FOOD={noodles:{n:'Noodle bowl',p:6},hotpot:{n:'Hot pot',p:9},grill:{n:'Gri
 const SHOP_FOOD={cafe:['coffee','juice','water','bento','noodles','pizza'],restaurant:['steak','sushi','paella','grill','hotpot','rice','wine','whiskey'],club:['whiskey','wine','juice','water']};
 
 // ---------------- PLACES (simple illustrated interiors; props are furniture-sheet sprites) ----------------
+const DP=(u,v)=>[Math.round(500+u*450-v*450),Math.round(170+u*225+v*225)];
+const PR=(k,u,v)=>[k,...DP(u,v)];
 const PLACES={
 lobby:{n:'Lumen Residences · Lobby',wall:['#b95f43','#a84f3d'],trim:'#f0d3ae',floor:['#f3e4c8','#e3cfa8'],rug:'#51b84d',sign:'LUMEN RESIDENCES',
- props:[['desk',420,320],['plant_big',190,330],['palm',780,330],['sofa_cream',300,450],['table_dark',420,500],['plant',650,520],['lamp_warm',840,420],['armchair',560,420]],
- hot:[{id:'elevator',n:'Elevator',x:640,y:250,kind:'door',col:'#c9a35a'},{id:'exit',n:'Front door',x:200,y:520,kind:'exit'},{id:'desk',n:'Reception',x:420,y:330,kind:'desk'}]},
+ props:[PR('plant_big',.05,.06),PR('desk',.36,.13),PR('palm',.92,.07),PR('sofa_cream',.12,.42),PR('armchair',.14,.22),PR('table_dark',.3,.45),PR('lamp_warm',.88,.3),PR('plant',.08,.62),PR('roses',.9,.55)],
+ hot:[{id:'elevator',n:'Elevator',kind:'door'},{id:'exit',n:'Front door',kind:'exit'},{id:'desk',n:'Reception',x:DP(.36,.24)[0],y:DP(.36,.24)[1],kind:'desk'}]},
 gym:{n:'Lumen Gym',wall:['#4a5468','#3a4254'],trim:'#d6dbe6',floor:['#3b3f4a','#30333c'],rug:'#b8323c',sign:'LUMEN GYM',
- props:[['powerrack',330,280],['treadmill',620,250],['machine_red',760,300],['dumbbells',260,420],['benchpress',470,420],['bench_blue',650,460],['speedbag',820,420],['ball',560,540],['lockers',150,360],['abbench',380,540]],
- hot:[{id:'exit',n:'Exit',x:200,y:520,kind:'exit'},{id:'train',n:'Training floor',x:500,y:350,kind:'train'}]},
+ props:[PR('lockers',.05,.07),PR('powerrack',.08,.3),PR('dumbbells',.1,.56),PR('treadmill',.3,.07),PR('machine_red',.55,.07),PR('benchpress',.84,.1),PR('speedbag',.93,.38),PR('bench_blue',.92,.62),PR('ball',.86,.86),PR('abbench',.42,.93)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'train',n:'Train together',x:DP(.68,.68)[0],y:DP(.68,.68)[1],kind:'train'}]},
 cafe:{n:'Cafe Lumière',wall:['#e9c9a0','#d9b48a'],trim:'#fff4dc',floor:['#b9875a','#a8774c'],rug:'#7aa86a',sign:'CAFE LUMIÈRE',
- props:[['fridge_glass',300,250],['counter',420,300],['chair_red',600,400],['table_dark',680,440],['chair_red',760,470],['plant',200,380],['palm',820,330],['armchair',440,520],['lamp_warm',560,300]],
- hot:[{id:'exit',n:'Exit',x:200,y:520,kind:'exit'},{id:'counter',n:'Order counter',x:420,y:320,kind:'food'}]},
+ props:[PR('fridge_glass',.06,.12),PR('counter',.26,.06),PR('lamp_warm',.46,.05),PR('palm',.92,.07),PR('plant',.06,.6),PR('table_dark',.8,.72),PR('chair_red',.68,.72),PR('chair_red',.86,.56),PR('armchair',.5,.92)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'counter',n:'Order counter',x:DP(.26,.2)[0],y:DP(.26,.2)[1],kind:'food'}]},
 restaurant:{n:'Restaurant Rosso',wall:['#7a1f2a','#661a24'],trim:'#e8c88a',floor:['#2e2228','#261c21'],rug:'#a8323c',sign:'RISTORANTE ROSSO',
- props:[['counter',350,280],['rug_red',560,420],['chair_red',480,440],['chair_red',650,470],['statue_white',800,300],['roses',220,370],['roses',780,500],['lamp_warm',640,260],['cabinet_glass',250,270]],
- hot:[{id:'exit',n:'Exit',x:200,y:520,kind:'exit'},{id:'counter',n:'Order from the menu',x:350,y:300,kind:'food'}]},
+ props:[PR('cabinet_glass',.06,.18),PR('counter',.24,.06),PR('lamp_warm',.5,.05),PR('statue_white',.9,.07),PR('roses',.06,.6),PR('rug_red',.76,.76),PR('chair_red',.64,.76),PR('chair_red',.8,.6),PR('roses',.93,.45)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'counter',n:'Order from the menu',x:DP(.24,.2)[0],y:DP(.24,.2)[1],kind:'food'}]},
 park:{n:'City Park',outdoor:1,floor:['#7cc46a','#6ab45a'],rug:'#cbb48a',sign:'CITY PARK',
- props:[['palm',260,260],['plant_big',740,250],['statue_white',500,230],['bench_blue',380,420],['bench_blue',640,440],['roses',200,420],['roses',820,400],['lamp_warm',520,500],['plant',300,520],['palm',760,540]],
- hot:[{id:'exit',n:'Exit',x:200,y:520,kind:'exit'},{id:'stroll',n:'Pond path',x:520,y:380,kind:'stroll'}]},
+ props:[PR('palm',.05,.1),PR('statue_white',.2,.18),PR('plant_big',.92,.05),PR('bench_blue',.3,.66),PR('bench_blue',.64,.72),PR('roses',.05,.5),PR('roses',.93,.5),PR('lamp_warm',.6,.42),PR('plant',.38,.93),PR('palm',.92,.92)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'stroll',n:'Pond path',x:DP(.55,.3)[0],y:DP(.55,.3)[1],kind:'stroll'}]},
 fshop:{n:'Furniture Shop',wall:['#f2efe8','#e4dfd4'],trim:'#c9a35a',floor:['#d8c6a6','#c9b593'],rug:'#3a6ab4',sign:'LUMEN FURNITURE',
- props:[['sofa_red',300,300],['bed_red',560,280],['bookcase_red',760,280],['tv',220,420],['powerrack',820,420],['sofa_cream',470,460],['plant_big',650,500],['fridge2',380,250],['desk',600,560],['armor',160,300]],
- hot:[{id:'exit',n:'Exit',x:200,y:520,kind:'exit'},{id:'shop',n:'Shop counter',x:500,y:380,kind:'shop'}]},
+ props:[PR('armor',.05,.14),PR('sofa_red',.09,.42),PR('fridge2',.26,.06),PR('bed_red',.5,.08),PR('bookcase_red',.84,.07),PR('tv',.08,.68),PR('powerrack',.93,.4),PR('sofa_cream',.9,.74),PR('plant_big',.6,.93),PR('desk',.36,.88)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'shop',n:'Shop counter',x:500,y:395,kind:'shop'}]},
 club:{n:'Night Club Neon',wall:['#1c1630','#151026'],trim:'#c15aff',floor:['#221a3a','#1a1430'],rug:'#48eaff',sign:'CLUB NEON',neon:1,
- props:[['couch_red',260,320],['sofa_red',760,320],['counter',480,250],['armchair',200,430],['statue_red',840,430],['lamp',620,250],['lamp',350,250]],
- hot:[{id:'exit',n:'Exit',x:200,y:520,kind:'exit'},{id:'dance',n:'Dance floor',x:520,y:430,kind:'dance'},{id:'counter',n:'Bar',x:480,y:270,kind:'food'}]},
+ props:[PR('lamp',.15,.06),PR('counter',.36,.06),PR('lamp',.6,.06),PR('couch_red',.08,.32),PR('armchair',.08,.6),PR('sofa_red',.9,.28),PR('statue_red',.92,.6)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'dance',n:'Dance floor',x:DP(.64,.64)[0],y:DP(.64,.64)[1],kind:'dance'},{id:'counter',n:'Bar',x:DP(.36,.2)[0],y:DP(.36,.2)[1],kind:'food'}]},
 };
 const TRAVEL=['gym','cafe','restaurant','park','fshop','club'];
 const PLACE_DESC={gym:'Train with tenants · Ares works here',cafe:'Coffee, bento & snacks',restaurant:'Steak, sushi & dinner',park:'Fresh air & stakeouts',fshop:'Buy furniture for the rooms',club:'Zayne spins 9 PM – 3 AM'};

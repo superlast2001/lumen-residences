@@ -85,11 +85,11 @@ function adj(Rm){if(Rm._adj)return Rm._adj;const a={};for(const k in Rm.nodes)a[
 function bfs(Rm,s,g){const a=adj(Rm),prev={[s]:null},q=[s];while(q.length){const c=q.shift();if(c==g)break;for(const d of a[c])if(!(d in prev)){prev[d]=c;q.push(d);}}if(!(g in prev))return[g];const p=[];let c=g;while(c){p.unshift(c);c=prev[c];}return p;}
 function nearestNode(Rm,x,y){let b=null,bd=1e9;for(const k in Rm.nodes){const [a,c]=Rm.nodes[k],d=Math.hypot(a-x,c-y);if(d<bd){bd=d;b=k;}}return b;}
 function spawn(n){const t={n,x:0,y:0,face:'down',path:[],idle:1+Math.random()*2,act:null,actT:0,emo:null,emoT:0,walkT:0,node:null};
- if(SC.kind=='room'){const ks=Object.keys(SC.R.nodes),k=rnd(ks);t.node=k;[t.x,t.y]=SC.R.nodes[k];}else{[t.x,t.y]=diaPt(.25+Math.random()*.5,.25+Math.random()*.5);}return t;}
+ if(SC.kind=='room'){const ks=Object.keys(SC.R.nodes),k=rnd(ks);t.node=k;[t.x,t.y]=SC.R.nodes[k];}else{[t.x,t.y]=diaPt(.28+Math.random()*.44,.28+Math.random()*.44);}return t;}
 function syncTenants(){const pr=present();for(const n in TN)if(!pr.includes(n)){delete TN[n];}pr.forEach(n=>{if(!TN[n])TN[n]=spawn(n);});}
 function walkTo(t,x,y,node){if(SC.kind=='room'){const from=t.node||nearestNode(SC.R,t.x,t.y),to=node||nearestNode(SC.R,x,y);t.path=bfs(SC.R,from,to).slice(from==to?0:1).map(k=>[...SC.R.nodes[k]]);t.node=to;t.path.push([x,y]);}else t.path=[[x,y]];}
 function wander(t){if(SC.kind=='room'){const ks=Object.keys(SC.R.nodes).filter(k=>k!=t.node),k=rnd(ks),[x,y]=SC.R.nodes[k];walkTo(t,x+(Math.random()-.5)*30,y+(Math.random()-.5)*16,k);}
- else{let p;do p=diaPt(.12+Math.random()*.76,.12+Math.random()*.76);while(!inDiamond(p[0],p[1],60));t.path=[p];}}
+ else{let p;do p=diaPt(.24+Math.random()*.52,.24+Math.random()*.52);while(!inDiamond(p[0],p[1],60));t.path=[p];}}
 function emote(n,e,dur=2.6){const t=TN[n];if(t){t.emo=e;t.emoT=dur;}}
 function doAct(n,act,x,y,node,after){const t=TN[n];if(!t){after&&after();return;}t.act=null;walkTo(t,x,y,node);t.pending={act,after};}
 function updTenant(t,dt){if(t.emoT>0){t.emoT-=dt;if(t.emoT<=0)t.emo=null;}
@@ -255,7 +255,7 @@ function showLine(){const l=dlg.lines[dlg.i],fc=$('dlgFace');layoutCG();const F=
  const putFace=()=>{fc.width=F.naturalWidth;fc.height=F.naturalHeight;const g=fc.getContext('2d');g.clearRect(0,0,fc.width,fc.height);g.drawImage(F,0,0);fc.style.width='84px';fc.style.display='block';};
  if(ok(F))putFace();else{fc.style.display='none';F.onload=()=>{if(dlg.on&&dlg.lines[dlg.i]===l)putFace();};}
  dlg.ch=0;$('dlgText').textContent='';$('dlgBox').style.visibility='visible';dlg.hidden=false;const t=TN[dlg.name];if(t&&l.e){const m={smile:'happy',laugh:'happy',angry:'angry',surprised:'surprised',blush:'blush'}[l.e];if(m)emote(dlg.name,m,2);}}
-function dlgNext(){const l=dlg.lines[dlg.i];if(dlg.ch<l.t.length){dlg.ch=l.t.length;$('dlgText').textContent=l.t;return;}dlg.i++;if(dlg.i>=dlg.lines.length)dlgClose();else showLine();}
+function dlgNext(){if(!dlg.on)return;const l=dlg.lines[dlg.i];if(dlg.ch<l.t.length){dlg.ch=l.t.length;$('dlgText').textContent=l.t;return;}dlg.i++;if(dlg.i>=dlg.lines.length)dlgClose();else showLine();}
 function dlgClose(){dlg.on=false;$('dlg').style.display='none';document.body.classList.remove('dlgon');const a=dlg.after;dlg.after=null;a&&a();}
 $('dlgNext').onclick=e=>{e.stopPropagation();dlgNext();};$('dlgSkip').onclick=e=>{e.stopPropagation();dlgClose();};$('dlgHide').onclick=e=>{e.stopPropagation();dlg.hidden=true;$('dlgBox').style.visibility='hidden';};
 $('dlg').onclick=()=>{if(dlg.hidden){dlg.hidden=false;$('dlgBox').style.visibility='visible';}else dlgNext();};
@@ -274,7 +274,7 @@ function renderFloors(){const W=$('fworld');let h=`<div class="bld"><div class="
   h+=`<div class="fl ${fsel.r==ri?'cur':''}"><span class="flabel">${row.f}</span><div class="vine l"></div><div class="vine r"></div>`+row.u.map((t,ui)=>{const s=fsel.r==ri&&fsel.u==ui?' sel':'';
    if(!t)return`<button class="bay${s}" data-r="${ri}" data-u="${ui}"><div class="win"></div><div class="bal"></div><div class="np vac">VACANT</div></button>`;
    const un=S.unlocked.includes(t),out=un&&placeOf(t)!='home';
-   return`<button class="bay${s}" data-r="${ri}" data-u="${ui}"><div class="win"></div><div class="bal"></div>${out?`<span class="away">OUT</span>`:''}<div class="av${un?'':' lock'}" style="background-image:url(${faceImg(t,'normal').src})"></div><div class="np">${un?t+(relLv(t)>=4?' <span class="hrt">♥</span>':''):'???'}</div></button>`;}).join('')+`</div>`;});
+   return`<button class="bay${s}" data-r="${ri}" data-u="${ui}"><div class="win"></div><div class="bal"></div>${out?`<span class="away">OUT</span>`:''}<div class="av${un?'':' lock'}" style="${un?`background-image:url(${faceImg(t,'normal').src})`:`background:url(${tImg(t,'chibi_front_hd.png').src}) center 4%/170% auto no-repeat`}"></div><div class="np">${un?t+(relLv(t)>=4?' <span class="hrt">♥</span>':''):'???'}</div></button>`;}).join('')+`</div>`;});
  W.innerHTML=h+`</div>`;const c=FIND_COST[S.unlocked.length],left=TENANT_ORDER.length-S.unlocked.length;$('findBtn').innerHTML=left?`FIND NEW<br>RESIDENT<small>♥ ${c}</small>`:`ALL<br>RESIDENTS<small>${S.unlocked.length}/4</small>`;$('findBtn').disabled=!left;
  W.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const r=+b.dataset.r,u=+b.dataset.u;if(fsel.r==r&&fsel.u==u)enterFloorSel();else{fsel={r,u};renderFloors();}});
  requestAnimationFrame(()=>{const cur=W.querySelector('.cur')||W.querySelector('.sel');if(!cur)return;const vh=$('floors').clientHeight,y=cur.offsetTop+cur.offsetHeight/2;W.style.transform=`translate(-50%,${Math.min(10,vh*.45-y)}px)`;});updateInfo();}
@@ -433,5 +433,5 @@ const RING=(()=>{const c=document.createElement('canvas');c.width=c.height=120;c
  g.lineWidth=12;g.strokeStyle=gr;g.beginPath();g.ellipse(60,74,32,26,0,0,7);g.stroke();const dg=g.createRadialGradient(56,34,2,60,40,20);dg.addColorStop(0,'#ffffff');dg.addColorStop(.6,'#bfe8ff');dg.addColorStop(1,'#6aaee0');g.fillStyle=dg;g.beginPath();g.moveTo(60,58);g.lineTo(44,40);g.lineTo(52,28);g.lineTo(68,28);g.lineTo(76,40);g.closePath();g.fill();g.strokeStyle='#ffffffaa';g.lineWidth=2;g.stroke();return c.toDataURL();})();
 
 // ---------------- boot ----------------
-window.Lumen={get S(){return S;},enterScene,openFloors,openTeleport,openProfile,openFridge,talk,startDialogue,findResident,devDo,TN:()=>TN,cam,cur,SC:()=>SC,actOn,targets,openShop,decorMenu,startDecor,placeDecor,save};
+window.Lumen={focus(n){const t=TN[n];if(!t)return false;t.path=[];t.pending=null;t.idle=99;cur.x=t.x;cur.y=t.y+8;cam.x=t.x;cam.y=t.y-SC.ch*.3;clampCam();return true;},screenOf(n){const t=TN[n];if(!t)return null;const [x,y]=W2S(t.x,t.y);return{x,y,h:SC.ch*cam.z};},get S(){return S;},enterScene,openFloors,openTeleport,openProfile,openFridge,talk,startDialogue,findResident,devDo,TN:()=>TN,cam,cur,SC:()=>SC,actOn,targets,openShop,decorMenu,startDecor,placeDecor,save};
 enterScene(S.scene,1);updateHud();requestAnimationFrame(frame);if(!S.seenHelp)setTimeout(helpSheet,400);
