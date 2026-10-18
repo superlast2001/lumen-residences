@@ -17,7 +17,7 @@ function grad(c,col,x0,y0,x1,y1,k=.2){const g=c.createLinearGradient(x0,y0,x1,y1
 function paint(c,fn,col,o={}){const [x0,y0,x1,y1]=o.box||[-30,-120,30,0];
  c.beginPath();fn(c);if(o.line!==0){c.lineWidth=OW*(o.lw||1)*1.5;c.strokeStyle=OL;c.lineJoin='round';c.stroke();}
  c.fillStyle=o.flat?col:grad(c,col,x0,y0,x1,y1,o.k||.18);c.fill();
- if(o.cel!==0){const [sx,sy]=o.cel||[-3.2,-2.6];c.save();c.beginPath();fn(c);c.clip();c.beginPath();c.rect(-300,-400,600,600);c.save();c.translate(sx,sy);fn(c);c.restore();c.fillStyle=o.sc||'rgba(70,20,60,.24)';c.fill('evenodd');
+ if(o.cel!==0){const [sx,sy]=o.cel||[-3.2,-2.6];c.save();c.beginPath();fn(c);c.clip();c.beginPath();c.rect(-300,-400,600,600);c.save();c.translate(sx,sy);fn(c);c.restore();c.fillStyle=o.sc||'rgba(80,24,56,.3)';c.fill('evenodd');
   c.beginPath();c.rect(-300,-400,600,600);c.save();c.translate(1.4,1.6);fn(c);c.restore();c.fillStyle=o.rim||'rgba(255,250,240,.38)';c.fill('evenodd');c.restore();}}
 function limb(c,pts,w,col,pass,o={}){c.lineCap='round';c.lineJoin='round';c.beginPath();c.moveTo(...pts[0]);for(let i=1;i<pts.length;i++)c.lineTo(...pts[i]);
  if(pass==0){c.lineWidth=w+OW*3;c.strokeStyle=OL;c.stroke();return;}
@@ -147,7 +147,7 @@ function paintNpc(c,s,act,p,walk,back){const J=joints(s,walk?'walk':act,p,walk),
  if(back)H.back.forEach(h=>P(h.fn,s.hc,{box:[hx-20,hy-34,hx+20,hy+20],k:.24}));
  if(!back)D(c=>face(c,s,hx,hy,J.mood,((p*9+(s.seed||0))%5)<.22&&J.mood!='grit',J.turn));
  H.front.forEach(h=>P(h.fn,h.o.tie?(s.band||'#e2525a'):h.o.dim?tn(s.hc,-.1):s.hc,{box:[hx-16,hy-34,hx+16,hy+10],k:h.o.k||.26,rim:'rgba(255,255,255,.4)'}));
- if(!back&&H.front.length)D(c=>{c.save();c.beginPath();H.front.forEach(h=>h.fn(c));c.clip();c.strokeStyle='rgba(255,255,255,.42)';c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(hx-2,hy+2,R-4,Math.PI*1.18,Math.PI*1.4);c.stroke();c.beginPath();c.arc(hx-2,hy+2,R-4,Math.PI*1.5,Math.PI*1.62);c.stroke();c.restore();});
+ if(!back&&H.front.length)D(c=>{c.save();c.beginPath();H.front.forEach(h=>h.fn(c));c.clip();c.strokeStyle='rgba(255,255,255,.42)';c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(hx-2,hy+2,R-4,Math.PI*1.18,Math.PI*1.4);c.stroke();c.beginPath();c.arc(hx-2,hy+2,R-4,Math.PI*1.5,Math.PI*1.62);c.stroke();c.strokeStyle=tn(s.hc,-.45);c.globalAlpha=.55;c.lineWidth=1;[[-.5,-.2],[-.15,.1],[.25,-.1],[.55,.15]].forEach(([a,b])=>{c.beginPath();c.moveTo(hx+a*R*.6,hy-R+2);c.quadraticCurveTo(hx+a*R*.9,hy-R*.5,hx+(a+b)*R,hy-4);c.stroke();});c.restore();});
  if(s.band)P(c=>{c.moveTo(hx-R-1,hy-8);c.quadraticCurveTo(hx,hy-17,hx+R+1,hy-8);c.lineTo(hx+R+1,hy-3);c.quadraticCurveTo(hx,hy-12,hx-R-1,hy-3);c.closePath();},s.band,{box:[hx-R,hy-15,hx+R,hy-3],cel:0});
  if(s.cap)P(c=>{c.ellipse(hx,hy-8,R+1.5,R-6,0,Math.PI,Math.PI*2);c.closePath();if(!back){c.moveTo(hx-4,hy-9);c.quadraticCurveTo(hx+20,hy-14,hx+R+12,hy-6);c.quadraticCurveTo(hx+18,hy-4,hx-4,hy-9);}},s.cap,{box:[hx-R,hy-30,hx+R,hy-4]});
  if(s.earbuds&&!back)D(c=>{[-1,1].forEach(d=>{c.fillStyle='#fff';c.beginPath();c.arc(hx+d*(R-1),hy+7,2.4,0,7);c.fill();c.strokeStyle=OL;c.lineWidth=1;c.stroke();});});

@@ -10,7 +10,7 @@
 // Footprints come from the painted piece models in furnart.js. use.at = where the tenant sits/lies on the piece in the
 // piece's local model space [x across, y depth (front = y max), z height px]; the painter's own projection maps it for each of 4 facings.
 // r (0..3): 0 front faces +v (down-left), 1 faces +u (down-right), 2 faces -v (to the back wall), 3 faces -u.
-const USE={bed:{act:'sleep',pose:'sleep',at:[1,1.0,33],ly:.6},bed_grey:{act:'sleep',pose:'sleep',at:[1,1.0,33],ly:.6},
+const USE={bed:{act:'sleep',pose:'sleep',at:[1,1.0,33],ly:.9},bed_grey:{act:'sleep',pose:'sleep',at:[1,1.0,33],ly:.9},
  sofa_red:{act:'sit',pose:'sit',at:[1,.62,29]},sofa_cream:{act:'sit',pose:'sit',at:[1,.62,29]},sofa_grey:{act:'sit',pose:'sit',at:[1,.62,29]},sofa_black:{act:'sit',pose:'sit',at:[1,.62,29]},
  armchair:{act:'sit',pose:'sit',at:[.5,.62,29]},chair_red:{act:'sit',pose:'sit',at:[.5,.52,33]},bench_blue:{act:'lift',pose:'sit',at:[1,.5,30]},
  tv:{act:'tv',pose:'tv'},fridge:{act:'fridge',pose:'fridge'},fridge2:{act:'fridge',pose:'fridge'},counter:{act:'cook',pose:'eat'},table_dining:{act:'eat',pose:'eat'},table_coffee:{act:'eat',pose:'eat'},
@@ -78,7 +78,7 @@ function usePoint(G,f){const d=FDEF[f.k],U=d&&d.use;if(!U)return null;const [w,h
  const z=G.zone[f.u]&&G.zone[f.u][f.v],behind=([u,v])=>r==0?v<f.v:r==1?u<f.u:r==2?v>=f.v+h:u>=f.u+w;
  const cand=[...front,...side.filter(p=>!front.some(q=>q[0]==p[0]&&q[1]==p[1])&&!behind(p))].filter(([u,v])=>G.free(u,v)&&G.zone[u][v]==z);
  let draw=[b.cx,b.by],depth=b.depth+.05,gp=null;
- if(U.at){const [gu,gv]=locToGrid(f.k,r,U.at[0],U.at[1]),q=G.pt(f.u+gu,f.v+gv),KZ=G.eu[0]/45;draw=[q[0],q[1]-U.at[2]*KZ];gp=U.ly!=null?locToGrid(f.k,r,U.at[0],U.ly):[gu,gv];
+ if(U.at){const [gu,gv]=locToGrid(f.k,r,U.at[0],U.at[1]),q=G.pt(f.u+gu,f.v+gv),KZ=G.eu[0]/45;draw=[q[0],q[1]-U.at[2]*KZ];gp=U.ly!=null?[...locToGrid(f.k,r,U.at[0],U.ly),r==1?0:1]:[gu,gv];
   // facing the camera (r 0/1): the tenant is drawn over the piece, then the piece's front layer (arms, blanket) over the tenant
   depth=r<2?b.depth+.05:b.depth-.05;}
  // lying axis on screen (head direction), for beds

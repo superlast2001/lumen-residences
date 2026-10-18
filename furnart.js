@@ -152,7 +152,7 @@ const cache=new Map();
 function render(k,r,eu,layer){const def=DEF[k];if(!def)return null;const key=k+'|'+r+'|'+eu[0]+'|'+(layer?layer.map(v=>v.toFixed(2)).join(','):'');if(cache.has(key))return cache.get(key);
  const ctx=mk(def,r,eu);def.paint(ctx);
  // front layer: only the parts in front of a tenant sitting/lying at grid point layer=[u,v] (arms, blanket)
- if(layer){const [lu,lv]=layer;const keep=ctx.items.filter(it=>it.bb&&(it.bb[0]>=lu-.001||it.bb[1]>=lv+.2));ctx.items.length=0;ctx.items.push(...keep);}
+ if(layer){const [lu,lv,ax]=layer;const keep=ctx.items.filter(it=>it.bb&&(ax!=null?it.bb[ax]>=(ax?lv:lu)-.001:(it.bb[0]>=lu-.001||it.bb[1]>=lv+.2)));ctx.items.length=0;ctx.items.push(...keep);}
  // bounds from the footprint and height
  const [W,D]=def.fp,gw=r%2?D:W,gh=r%2?W:D,pts=[[0,0],[gw,0],[gw,gh],[0,gh]].map(([a,b])=>[a*eu[0]-b*eu[0],a*eu[1]+b*eu[1]]);
  const pad=34,x0=Math.min(...pts.map(p=>p[0]))-pad,x1=Math.max(...pts.map(p=>p[0]))+pad,y0=Math.min(...pts.map(p=>p[1]))-(def.h+20)*ctx.KZ-pad,y1=Math.max(...pts.map(p=>p[1]))+pad;
