@@ -1,7 +1,7 @@
 'use strict';
 // Lumen Residences — engine. Kairosoft-style portrait layout (game view on top, D-pad panel below),
 // Ero-Condo-style tenant loop. Dialogue system, dev panel, save and sfx follow Fantasy Town v0.0.2.3.
-const VERSION='v0.3.0',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
+const VERSION='v0.3.1',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 const DPR=()=>Math.min(3,window.devicePixelRatio||1);
@@ -201,7 +201,7 @@ function drawOverlay(g,time){const [vw,vh]=viewSize();
 function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;resize();update(dt);const d=DPR();ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,cv.width,cv.height);const time=now/1000;
  drawWorld(ctx,time);drawOverlay(ctx,time);requestAnimationFrame(frame);}
 let hudT=0,infoKey='',exOpen=null;
-function exTick(){if(SC.kind!='place'||!SC.P.extras)return;const h=hour(),o=SC.p=='gym'?(h>=6&&h<23):(h>=20||h<4);if(o!==exOpen){exOpen=o;rebuildOcc(SC.G,sceneFurn());spawnExtras();}}
+function exTick(){if(SC.kind!='place'||!SC.P.extras)return;const h=hour(),o=SC.p=='gym'?(h>=6&&h<23):SC.p=='club'?(h>=20||h<4):true;if(o!==exOpen){exOpen=o;rebuildOcc(SC.G,sceneFurn());spawnExtras();}}
 function update(dt){const paused=dlg.on||sheetOpen()||$('stamp').classList.contains('open');
  if(!paused){tickTime(dt*1.5);tickNeeds(dt*1.5);syncTenants();exTick();}
  if(dlg.on){const l=dlg.lines[dlg.i];if(dlg.ch<l.t.length){dlg.ch=Math.min(l.t.length,dlg.ch+dt*45);$('dlgText').textContent=l.t.slice(0,Math.floor(dlg.ch));}}

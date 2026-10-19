@@ -22,9 +22,9 @@ You start in the lobby. **FLOOR** opens the building-front floor picker, and the
 - **Furniture** (`furnart.js`): every piece is painted procedurally in the chibi-sprite style (soft cel shading, rounded
   cushiony corners, a dark sticker outline) from a small 3D-ish model, so all **4 facings** are drawn properly (ROTATE
   cycles them). Pieces have front layers (sofa arms, blanket) drawn over a seated/sleeping tenant.
-- **NPCs** (`npc.js`): gym-goers and clubbers are painted chibis at tenant scale (big glossy eyes, gradient + cel shadow
-  + rim light, dark outline), each with its own design and looping activity animation (run, squat, curl, punch, yoga,
-  pull-up, drink, dance, cheer), plus walk cycles and back views.
+- **NPCs** (`npc.js`, `assets/npc/`): 20 painted chibi sprites in the style of the user's reference sheet (faces added), each with
+  front idle / side walk / back / activity views from one generated character sheet, keyed off white with clean alpha.
+  Walk bob/lean, runs, reps, punches, dancing and hops are code transforms. Gym 9, club 9, lobby 2 (Theo, Elise).
 - **Tenant poses** (sheet sprites only, no edits): sit (sofa/chair/desk, back view on away-facing seats), sleep (lying
   under the blanket), squat with barbell, treadmill run, punch, eat (favourite food), fridge (door opens, then a snack),
   TV, exercise ball, DJ, coach, dance. Idle cycles through the sheet's emote and side poses.

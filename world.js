@@ -303,12 +303,12 @@ function drawChibiT(g,t,time,hl){const T=TENANTS[t.n],ref=tImg(t.n,'chibi_front_
    g.save();g.beginPath();g.ellipse(ax,ay-ih/2,iw/2+H*.06,ih/2+H*.06,0,0,7);g.fillStyle='rgba(255,255,255,.94)';g.fill();g.strokeStyle='rgba(42,26,32,.8)';g.lineWidth=2;g.stroke();g.imageSmoothingQuality='high';g.drawImage(I,ax-iw/2,ay-ih,iw,ih);g.restore();}}
   bubbleDraw(g,t,x,y-bob-(rot?-H*.3:0),H,time);}}
 
-// ---------------- extras (gym-goers, clubbers) ----------------
+// ---------------- extras (gym-goers, clubbers, lobby visitors; sprites in npc.js) ----------------
 let EX=[];
 function spawnExtras(){EX=[];if(SC.kind!='place')return;const G=SC.G,p=SC.p,P=SC.P;if(!P.extras)return;const h=hour();
  if(p=='gym'&&(h<6||h>=23))return;if(p=='club'&&!(h>=20||h<4))return;
- const cast=p=='gym'?GYMCAST:CLUBCAST,L=usables();
- P.extras.forEach((s,i)=>{const c=cast.find(q=>q.n==s.n);if(!c)return;let U=null,t=s.t;
+ const L=usables();
+ P.extras.forEach((s,i)=>{const c=NPCS.find(q=>q.n==s.n);if(!c)return;let U=null,t=s.t;
   if(s.on){U=L.find(u=>u.f&&u.f.k==s.on&&(s.oi==null||P.props.indexOf(u.f)==s.oi));if(!U)return;t=[U.f.u,U.f.v];}
   const e={c,u:t[0],v:t[1],fu:t[0]+.5,fv:t[1]+.5,act:s.act||c.act,flip:s.flip||0,walk:0,path:[],timer:10+Math.random()*25,home:t.slice(),U:null,x:0,y:0};
   if(U){e.U=U.f;e.UP=U;e.draw=U.draw;e.depth=U.depth;e.flip=(U.f.r==1||U.f.r==2)?1:0;}
@@ -319,4 +319,4 @@ function updEx(e,dt,time){if(e.walk){const [nu,nv]=e.path[0]||[e.u,e.v],tx=nu+.5
   const G=SC.G;if(G.occ[e.u][e.v]===e)G.occ[e.u][e.v]=null;const R=reach(G,[e.u,e.v],null).filter(([u,v])=>Math.abs(u-e.home[0])+Math.abs(v-e.home[1])<=3&&(u!=e.u||v!=e.v));
   if(!R.length){e.timer=10;G.occ[e.u][e.v]=e;return;}const goal=Math.random()<.5?e.home:rnd(R),p=astar(G,[e.u,e.v],goal,e);if(!p||p.length<2){e.timer=10;G.occ[e.u][e.v]=e;return;}e.path=p.slice(1);e.walk=1;}}
 function drawEx(g,e,time,hl){const [x,y]=e.U?e.draw:SC.G.pt(e.fu,e.fv);e.x=x;e.y=y;g.save();if(hl){g.shadowColor='rgba(255,236,140,.9)';g.shadowBlur=10*DPR();}
- drawExtra(g,x,y,{...e.c,act:e.U&&e.UP&&e.UP.pose=='run'?'run':e.act,noShadow:!!e.U,back:e.walk&&e.back},time,e.walk,SC.ch*.97,e.flip);g.restore();}
+ drawExtra(g,x,y,{...e.c,act:e.U&&e.UP&&e.UP.pose=='run'?'run':e.act,onU:!!e.U,noShadow:!!e.U,back:e.walk&&e.back},time,e.walk,SC.ch*.97,e.flip);g.restore();}

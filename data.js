@@ -209,12 +209,13 @@ const EXIT={t:[0,8],out:[-1,0]};
 const PLACES={
 lobby:{n:'Lumen Residences · Lobby',wall:['#b95f43','#a84f3d'],trim:'#f0d3ae',tex:'t02',sign:'LUMEN RESIDENCES',entry:EXIT,elev:{t:[6,0],out:[0,-1]},
  props:[F('plant_big',0,0),F('desk',2,0),F('palm',9,0),F('lamp_warm',4,0),F('sofa_cream',0,3,1),F('table_coffee',2,3,1),F('armchair',2,2),F('plant',0,6,1),F('roses',9,4)],
+ extras:[{n:'Theo',t:[5,5]},{n:'Elise',t:[7,3],flip:1}],
  hot:[{id:'elevator',n:'Elevator',kind:'door'},{id:'exit',n:'Front door',kind:'exit'},{id:'desk',n:'Reception',t:[3,2],kind:'desk'}]},
 gym:{n:'Lumen Gym',wall:['#4a5468','#3a4254'],trim:'#d6dbe6',tex:'t23',sign:'LUMEN GYM',entry:EXIT,
  props:[F('treadmill',1,0),F('treadmill',4,0),F('machine_red',7,0),F('lockers',9,0),F('pullup',0,2,1),F('speedbag',0,4,1),F('lockers',0,6,1),
   F('bench_black',3,4),F('kettlebell',6,4),F('ball',8,4),F('rug_red',5,6),F('bench_blue',2,7),F('plant_big',0,0)],
- extras:[{n:'Mika',on:'treadmill',oi:0},{n:'Sora',on:'machine_red'},{n:'Leon',on:'pullup'},{n:'Big Dano',t:[4,3]},{n:'Tomas',t:[3,6]},{n:'Jett',t:[1,4],flip:0},
-  {n:'Coach Rin',t:[6,7]},{n:'Gus',t:[8,8],flip:1}],
+ extras:[{n:'Mika',on:'treadmill',oi:0},{n:'Sora',on:'treadmill',oi:1},{n:'Leon',t:[7,2],flip:1},{n:'Big Dano',t:[4,3]},{n:'Bram',t:[3,6]},{n:'Jett',t:[1,4],flip:0},
+  {n:'Coach Rin',t:[6,7]},{n:'Priya',t:[6,5],flip:1},{n:'Gus',t:[8,8],flip:1}],
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'train',n:'Train together',t:[5,8],kind:'train'}]},
 cafe:{n:'Cafe Lumière',wall:['#e9c9a0','#d9b48a'],trim:'#fff4dc',tex:'t12',sign:'CAFE LUMIÈRE',entry:EXIT,
  props:[F('counter',2,0),F('fridge2',4,0),F('lamp_warm',6,0),F('plant_palm',9,0),F('plant',0,5,1),F('table_coffee',5,5),F('chair_red',5,4),F('chair_red',6,4),F('chair_red',4,5,1),
@@ -232,7 +233,7 @@ fshop:{n:'Furniture Shop',wall:['#f2efe8','#e4dfd4'],trim:'#c9a35a',tex:'t20',si
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'shop',n:'Shop counter',t:[4,4],kind:'shop'}]},
 club:{n:'Night Club Neon',wall:['#1c1630','#151026'],trim:'#c15aff',tex:'t32',sign:'CLUB NEON',neon:1,entry:EXIT,dance:[3,3,5,5],
  props:[F('djbooth',2,1),F('speaker',1,1),F('speaker',6,1),F('counter',8,0),F('barstool',8,1),F('barstool',9,1),F('sofa_black',0,3,1),F('table_coffee',1,3,1),F('armchair',0,6,1),F('plant_palm',9,2),F('speaker',9,6,1)],
- extras:[{n:'Nova',t:[4,4]},{n:'Kai',t:[6,4]},{n:'Luz',t:[5,6]},{n:'Ivy',t:[3,6]},{n:'Rafe',t:[7,6],flip:1},{n:'Dex',t:[2,3]},{n:'Mei',t:[8,2],flip:1}],
+ extras:[{n:'Nova',t:[4,4]},{n:'Kai',t:[6,4]},{n:'Luz',t:[5,6]},{n:'Ivy',t:[3,6]},{n:'Zed',t:[4,6]},{n:'Amara',t:[6,7],flip:1},{n:'Rafe',t:[7,5],flip:1},{n:'Dex',t:[7,2],flip:1},{n:'Mei',t:[8,3],flip:1}],
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'dance',n:'Dance floor',t:[5,5],kind:'dance'},{id:'counter',n:'Bar',t:[8,2],kind:'food'}]},
 };
 const TRAVEL=['gym','cafe','restaurant','park','fshop','club'];
