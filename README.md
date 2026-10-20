@@ -18,6 +18,13 @@ You start in the lobby. **FLOOR** opens the building-front floor picker, and the
 - Room pathing uses hand-placed waypoints, so it is approximate.
 - There is no player avatar, to avoid inventing a character; a cursor is used instead. The ring is a canvas drawing.
 
+## v0.3.2 — new default apartment
+- All four tenant flats (Ares, Zayne, Batzz, Ophion) now use one bigger default apartment: 179 floor tiles, up from 120. It has orange walls, glossy cream tiles, a balcony with sliding doors and yellow curtains, a wall AC and a glass front door. A blue-tiled bathroom juts out at the front-right, behind a glass partition with a doorway. The shell is drawn in code (`apt.js`), so walls, the doorway, A* walking and depth sorting all work.
+- Starter furniture: a cosy honey bed, a built-in glass shower (fixed, so it can't be moved or stored), a sink and a fridge.
+- The shower can be used. Tenants walk through the bathroom doorway and step into the enclosure. You see rain-head water, steam and the glass fogging up, then they come out with a towel. Ophion plays his own painted shower sequence, and his after-shower frames (shake, dry, towel, blush) play as he leaves.
+- Old themed rooms are still in `ROOMS_THEMED`. To switch back, set `ROOM_STYLE='themed'` in `data.js`. Themed furniture is still sold in the shop.
+- Older saves are migrated once. Placed furniture goes back to storage and each flat gets the new default set.
+
 ## v0.3.0 — one art style
 - **Furniture** (`furnart.js`): every piece is painted procedurally in the chibi-sprite style (soft cel shading, rounded
   cushiony corners, a dark sticker outline) from a small 3D-ish model, so all **4 facings** are drawn properly (ROTATE

@@ -139,7 +139,7 @@ const FIND_COST=[0,30,60,90];
 // type 'paint': the user's painted apartment kept as-is, with a hand-authored walkable tile grid laid over it (zones are lists
 //   of rects); the furniture painted into the art becomes "spots" tenants walk to and use. No extra sprites are stacked on top.
 const TW=90,tileO=(cols,rows,WH)=>[rows*TW/2+40,WH+60],tileWH=(cols,rows,WH)=>[(cols+rows)*TW/2+80,WH+60+(cols+rows)*TW/4+40];
-const ROOMS={
+const ROOMS_THEMED={
 Ares:{type:'tile',name:'Ares Apartment',cols:12,rows:10,TW,WH:150,LH:30,ch:122,z:.0,
  theme:{bg:'#140e13',wall:'#4a3a44',trim:'#d9a45e',lowWall:'#5a4652'},
  zones:{K:{n:'Kitchen',r:[0,0,6,5],tex:'t00',wall:'#53414a'},G:{n:'Bedroom & home gym',r:[6,0,6,5],tex:'t13',wall:'#3f3a4c'},L:{n:'Living room',r:[0,5,6,5],tex:'t10'},
@@ -179,7 +179,25 @@ Ophion:{type:'paint',img:'assets/ophion/room_hd.jpg',W:1536,H:1024,ch:112,name:'
   {n:'Spa tub',act:'bath',pose:'bath',t:[20,30],at:[18,30.5],clip:.5},{n:'Vanity',act:'wash',pose:'front',t:[21,28]}],
  zoneLabel:{STUDY:[16,12],LOUNGE:[21,18.5],DINING:[25,12.5]}},
 };
-for(const n in ROOMS){const R=ROOMS[n];if(R.type=='tile'){R.O=tileO(R.cols,R.rows,R.WH);[R.W,R.H]=tileWH(R.cols,R.rows,R.WH);}}
+// ---- v0.3.2: the user's DEFAULT APARTMENT (orange walls, dark grey skirting, glossy cream tiles, balcony glass doors with
+// yellow curtains + sea view, wall AC, glass front door, glass bathroom with a built-in shower in the front-right corner).
+// Drawn in code on the tile grid (world.js drawAptShell) so walls, the bathroom doorway, A* and depth sorting all work.
+// 179 floor tiles (old rooms: 120). The tenants' themed rooms stay in ROOMS_THEMED: set ROOM_STYLE='themed' to switch back.
+const ROOM_STYLE='default';
+const APT_LABELS=[[2.6,4],[6.8,2.6],[5,9.4]];
+function aptRoom(n){const T=ROOMS_THEMED[n];const lbl={};(TENANTS[n].zones||[]).forEach((z,i)=>lbl[z.id]=APT_LABELS[i%3]);
+ return{type:'tile',style:'apt',name:n+"'s Apartment",cols:15,rows:13,TW,WH:150,LH:30,ch:122,z:0,
+ theme:{bg:'#efe7dc',wall:'#f39a22',trim:'#ffffff',lowWall:'#f08f1c',base:'#4b4a52'},
+ zones:{M:{n:'Living space',rs:[[3,0,12,2],[0,2,15,4],[0,6,11,5],[0,11,10,2]],floor:'cream'},W:{n:'Bathroom',rs:[[11,6,4,5]],floor:'blue'}},
+ doors:[[10,8,11,8]],
+ // tall see-through bathroom partition (zone edge v=6, u 11..12) and the tiled shower back wall (u 13..14)
+ tall:[{v:6,u0:11,u1:13,kind:'glass'},{v:6,u0:13,u1:15,kind:'tile'}],
+ entry:{t:[12,0],out:[0,-1],side:'R',img:'glass'},
+ balcony:{side:'L',line:0,v0:3,v1:9},ac:{side:'L',line:3,v0:0,v1:2},
+ zoneLabel:lbl,themed:T,
+ defFurn:[{k:'shower_glass',u:13,v:6,fixed:1},{k:'bed_apt',u:8,v:0},{k:'sink',u:11,v:10,r:1},{k:'fridge',u:5,v:0}]};}
+const ROOMS={};for(const n of ['Ares','Zayne','Batzz','Ophion'])ROOMS[n]=ROOM_STYLE=='themed'?ROOMS_THEMED[n]:aptRoom(n);
+for(const RR of [ROOMS,ROOMS_THEMED])for(const n in RR){const R=RR[n];if(R.type=='tile'){R.O=tileO(R.cols,R.rows,R.WH);[R.W,R.H]=tileWH(R.cols,R.rows,R.WH);}}
 
 // ---------------- FURNITURE (each piece cut from the furniture sheet with SAM + Real-ESRGAN; see assets/tools/furn_sam.py) ----------------
 // act: what a tenant does with it; cat: shop tab. Footprints / use points live in world.js (FDEF).
@@ -188,8 +206,8 @@ fridge:{n:'White fridge',cat:'Kitchen',p:60,act:'fridge'},fridge2:{n:'Twin-door 
 sofa_red:{n:'Red velvet sofa',cat:'Living',p:70,act:'sit'},sofa_cream:{n:'Cream sofa',cat:'Living',p:65,act:'sit'},sofa_grey:{n:'Grey sofa',cat:'Living',p:55,act:'sit'},sofa_black:{n:'Black leather sofa',cat:'Living',p:75,act:'sit'},
 armchair:{n:'Red armchair',cat:'Living',p:35,act:'sit'},tv:{n:'Big TV + console',cat:'Living',p:90,act:'tv'},table_coffee:{n:'Coffee table',cat:'Living',p:30},
 rug_red:{n:'Red rug',cat:'Living',p:25},lamp_floor:{n:'Brass floor lamp',cat:'Living',p:18},
-bed:{n:'Double bed',cat:'Bedroom',p:90,act:'sleep'},bed_grey:{n:'Grey king bed',cat:'Bedroom',p:120,act:'sleep'},wardrobe_wood:{n:'Wood wardrobe',cat:'Bedroom',p:45},wardrobe_black:{n:'Black wardrobe',cat:'Bedroom',p:50},
-bathtub:{n:'White bathtub',cat:'Bath',p:70,act:'bath'},shower:{n:'Glass shower',cat:'Bath',p:80,act:'shower'},toilet:{n:'Toilet',cat:'Bath',p:30,act:'toilet'},sink:{n:'Pedestal sink',cat:'Bath',p:25,act:'wash'},vanity:{n:'Bathroom vanity',cat:'Bath',p:40,act:'wash'},
+bed:{n:'Double bed',cat:'Bedroom',p:90,act:'sleep'},bed_apt:{n:'Cosy honey bed',cat:'Bedroom',p:80,act:'sleep'},bed_grey:{n:'Grey king bed',cat:'Bedroom',p:120,act:'sleep'},wardrobe_wood:{n:'Wood wardrobe',cat:'Bedroom',p:45},wardrobe_black:{n:'Black wardrobe',cat:'Bedroom',p:50},
+bathtub:{n:'White bathtub',cat:'Bath',p:70,act:'bath'},shower_glass:{n:'Glass shower (built-in)',cat:'Bath',p:0,act:'shower',fixed:1,noshop:1},shower:{n:'Glass shower',cat:'Bath',p:80,act:'shower'},toilet:{n:'Toilet',cat:'Bath',p:30,act:'toilet'},sink:{n:'Pedestal sink',cat:'Bath',p:25,act:'wash'},vanity:{n:'Bathroom vanity',cat:'Bath',p:40,act:'wash'},
 desk:{n:'Desk & chair',cat:'Study',p:55,act:'read'},chair_red:{n:'Red chair',cat:'Study',p:20,act:'sit'},bookshelf:{n:'Tall bookshelf',cat:'Study',p:60,act:'read'},bookcase_red:{n:'Red bookcase',cat:'Study',p:60,act:'read'},
 treadmill:{n:'Treadmill',cat:'Gym',p:110,act:'run'},machine_red:{n:'Cardio machine',cat:'Gym',p:100,act:'run'},bench_black:{n:'Weight bench',cat:'Gym',p:45,act:'lift'},bench_blue:{n:'Flat bench',cat:'Gym',p:30,act:'lift'},
 kettlebell:{n:'Kettlebell',cat:'Gym',p:15,act:'lift'},pullup:{n:'Pull-up tower',cat:'Gym',p:70,act:'pull'},speedbag:{n:'Speed bag stand',cat:'Gym',p:35,act:'punch'},ball:{n:'Exercise ball',cat:'Gym',p:12,act:'stretch'},lockers:{n:'Red gym lockers',cat:'Gym',p:40},

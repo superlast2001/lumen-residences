@@ -1,7 +1,7 @@
 'use strict';
 // Lumen Residences — engine. Kairosoft-style portrait layout (game view on top, D-pad panel below),
 // Ero-Condo-style tenant loop. Dialogue system, dev panel, save and sfx follow Fantasy Town v0.0.2.3.
-const VERSION='v0.3.1',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
+const VERSION='v0.3.2',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 const DPR=()=>Math.min(3,window.devicePixelRatio||1);
@@ -21,12 +21,17 @@ const foodImg=k=>img(`assets/furn/food_${k}_hd.png`);
 // preload what every screen needs
 for(const n of TENANT_ORDER){const T=TENANTS[n];['front','right','back','left'].forEach(d=>tImg(n,`chibi_${d}_hd.png`));for(let i=0;i<T.walkN;i++)tImg(n,`walk_${i}_hd.png`);
  ['idle','smile','blush','angry','surprised','happy','sit'].forEach(e=>tImg(n,`emote_${e}_hd.png`));if(T.sitns)tImg(n,'emote_sitns_hd.png');Object.values(T.icons).forEach(f=>tImg(n,f+'_hd.png'));faceImg(n,'normal');if(T.poses)Object.values(T.poses).forEach(f=>tImg(n,f));}
+if(TENANTS.Ophion)[...OPH_SHOWER,...OPH_AFTER].forEach(f=>tImg('Ophion','shower_'+f+'_hd.png'));
 
 // ---------------- state ----------------
 let S;
-function newState(){const s={v:2,day:1,min:8*60,money:200,hearts:30,unlocked:['Ares'],scene:'lobby',rel:{},rooms:{},inv:{},bag:{water:2,coffee:1},ring:0,seenHelp:0};
+function newState(){const s={v:2,roomV:ROOM_STYLE=='themed'?1:2,day:1,min:8*60,money:200,hearts:30,unlocked:['Ares'],scene:'lobby',rel:{},rooms:{},inv:{},bag:{water:2,coffee:1},ring:0,seenHelp:0};
  TENANT_ORDER.forEach(n=>{s.rel[n]={p:0,talk:0,fed:0,used:{},day:0,dating:0,engaged:0,married:0,engDay:0};s.rooms[n]={furn:(ROOMS[n].defFurn||[]).map(f=>({r:0,...f})),fridge:n=='Ares'?{steak:1,water:2}:{water:1}};});return s;}
-function load(key=SAVE){try{const j=JSON.parse(localStorage.getItem(key));if(j&&j.v==2)return j;}catch(e){}return null;}
+function load(key=SAVE){try{const j=JSON.parse(localStorage.getItem(key));if(j&&j.v==2){migrateRooms(j);return j;}}catch(e){}return null;}
+// v0.3.2: every apartment moved to the new default shell. Old placements no longer fit its walls, so placed pieces go back to
+// storage (nothing is lost) and each room starts from the default bed + built-in shower + basics.
+function migrateRooms(j){const want=ROOM_STYLE=='themed'?1:2;if((j.roomV||1)==want)return;j.inv=j.inv||{};for(const n of TENANT_ORDER){const r=j.rooms[n];if(!r)continue;
+ (r.furn||[]).forEach(f=>{if(FURN[f.k]&&!FURN[f.k].fixed)j.inv[f.k]=(j.inv[f.k]||0)+1;});const def=(ROOMS[n].defFurn||[]);def.forEach(f=>{if(!FURN[f.k].fixed&&j.inv[f.k]>0)j.inv[f.k]--;});r.furn=def.map(f=>({r:0,...f}));}j.roomV=want;}
 function save(quiet,key=SAVE){try{localStorage.setItem(key,JSON.stringify(S));if(!quiet)toast('Game saved');}catch(e){}}
 S=load()||newState();
 
@@ -179,10 +184,11 @@ function drawWorld(g,time){const [vw,vh]=viewSize(),G=SC.G;g.save();g.translate(
  // depth-sorted entities (iso depth = u+v)
  const E=[],list=sceneFurn(),df=decorF();
  list.forEach((f,i)=>{if(decor&&decor.from===f)return;const hl=hover&&(hover.type=='furn'||hover.type=='prop')&&hover.f===f;E.push({depth:FDEF[f.k]&&FDEF[f.k].flat?-1:fBase(G,f).depth,d:()=>drawFurn(g,G,f,null,hl,time)});});
- if(SC.kind=='room'&&SC.R.type=='tile')lowWalls(G,SC.R,SC.R.theme).forEach(w=>E.push({depth:w.depth,d:()=>w.d(g)}));
+ if(SC.kind=='room'&&SC.R.type=='tile')(SC.R.style=='apt'?aptWalls(G,SC.R):lowWalls(G,SC.R,SC.R.theme)).forEach(w=>E.push({depth:w.depth,d:()=>w.d(g)}));
  for(const n in TN){const t=TN[n];E.push({depth:tDepth(t),d:()=>drawChibiT(g,t,time,(hover&&hover.type=='tenant'&&hover.n==n)||sel==n)});}
  for(const n in TN){const t=TN[n],U=t.U;if(t.state=='use'&&U&&U.f&&U.pose=='fridge'){const el=(t.useDur||6)-t.useT,k=Math.min(1,el/.4,Math.max(0,t.useT-.2)/.4);E.push({depth:fBase(G,U.f).depth+.3,d:()=>drawFridgeDoor(g,G,U.f,k)});}}
- for(const n in TN){const t=TN[n],U=t.U;if(t.state=='use'&&t.onIt&&U&&U.f&&U.gp&&!U.away)E.push({depth:U.depth+.01,d:()=>drawFurn(g,G,U.f,null,false,time,U.gp)});}
+ for(const n in TN){const t=TN[n],U=t.U;if(t.state=='use'&&t.onIt&&U&&U.f&&U.gp&&!U.away)E.push({depth:U.depth+.01,d:()=>drawFurn(g,G,U.f,null,false,time,U.gp)});
+  if(t.state=='use'&&U&&U.f&&U.pose=='shower')E.push({depth:U.depth+.02,d:()=>drawShowerFx(g,G,t,time)});}
  EX.forEach(e=>E.push({depth:e.U?e.depth:e.fu+e.fv,d:()=>drawEx(g,e,time,hover&&hover.type=='npc'&&hover.e===e)}));
  EX.forEach(e=>{const U=e.UP;if(U&&U.gp&&!U.away&&ON_POSES.includes(U.pose))E.push({depth:U.depth+.01,d:()=>drawFurn(g,G,U.f,null,false,time,U.gp)});});
  if(df){footprint(g,G,df,canPlace(G,df,decor.from));E.push({depth:fBase(G,df).depth+.01,d:()=>drawFurn(g,G,df,.78,false,time)});}
@@ -352,7 +358,7 @@ function foodShop(p){const list=SHOP_FOOD[p]||SHOP_FOOD.cafe;openSheet(`<h3>${PL
  list.map(k=>`<button class="item" onclick="buyFood('${k}','${p}')"><span class="own">${S.bag[k]||0}</span><img src="${foodImg(k).src}"><span>${FOOD[k].n}</span><span class="pr">${money(FOOD[k].p)}</span></button>`).join('')+`</div>`);}
 function buyFood(k,p){if(S.money<FOOD[k].p){toast('Not enough money');sfx(180);return;}S.money-=FOOD[k].p;S.bag[k]=(S.bag[k]||0)+1;sfx(900);toast(`Bought ${FOOD[k].n}`);save(1);foodShop(p);updateHud();}
 let shopCat='Gym';
-function openShop(cat){if(cat)shopCat=cat;const ks=Object.keys(FURN).filter(k=>FURN[k].cat==shopCat);
+function openShop(cat){if(cat)shopCat=cat;const ks=Object.keys(FURN).filter(k=>FURN[k].cat==shopCat&&!FURN[k].noshop);
  openSheet(`<h3>FURNITURE SHOP</h3><p>Paid from rent money · you have <b>${money(S.money)}</b>. Bought items go to storage; place them with MENU → Decorate.</p><div class="tabs">${FURN_CATS.map(c=>`<button class="tab${c==shopCat?' on':''}" onclick="openShop('${c}')">${c}</button>`).join('')}</div><div class="grid3">`+
  ks.map(k=>{const F=FURN[k],own=k=='ring'?S.ring:(S.inv[k]||0);return`<button class="item" onclick="buy('${k}')"><span class="own">${own}</span><img src="${k=='ring'?RING:furnThumb(k)}"><span>${F.n}</span><span class="pr">${money(F.p)}</span>${F.act?`<small style="font-size:9px;color:#6a5a72">use: ${F.act}</small>`:''}</button>`;}).join('')+`</div>`);}
 function buy(k,fromZone){const F=FURN[k];if(S.money<F.p){toast(`Not enough money (${money(F.p)})`);sfx(180);return;}S.money-=F.p;if(k=='ring')S.ring++;else S.inv[k]=(S.inv[k]||0)+1;sfx(900);save(1);updateHud();
@@ -363,7 +369,7 @@ function decorMenu(){if(SC.kind!='room'){toast('Go to a resident\'s room to deco
  openSheet(`<h3>DECORATE · ${ROOMS[n].name.toUpperCase()}</h3><p>Choose an item from storage, move it with the D-pad (it snaps to the floor tiles — green fits, red is blocked), ROTATE, then PLACE.${SC.R.type=='paint'?' This apartment is painted art with its own furniture, so new pieces go on the free floor only.':''}</p><h4 style="margin:6px 0">STORAGE</h4><div class="grid3">`+(inv.map(([k,v])=>`<button class="item" onclick="startDecor('${k}')"><span class="own">${v}</span><img src="${furnThumb(k)}"><span>${FURN[k].n}</span></button>`).join('')||'<p>Empty — buy furniture in the shop.</p>')+`</div>
  <button class="mbtn gold" onclick="openShop()">Open the furniture shop</button><h4 style="margin:10px 0 6px">PLACED IN THIS ROOM</h4><div class="grid3">`+(placed.map((f,i)=>`<button class="item" onclick="pickFurn(${i})"><img src="${furnThumb(f.k)}"><span>${furnName(f.k)}</span><small style="font-size:9px">move / store</small></button>`).join('')||'<p>Nothing placed yet.</p>')+`</div>`);}
 function startDecor(k){if(SC.kind!='room')return;if(!S.inv[k]){toast('None in storage');return;}S.inv[k]--;decor={k,r:0,from:null};closeSheet();toast('Move with the D-pad · ROTATE · PLACE');updateInfo();}
-function pickFurn(i){const f=S.rooms[SC.n].furn[i];decor={k:f.k,r:f.r||0,from:f};const [x,y]=SC.G.pt(f.u+fpOf(f)[0]/2,f.v+fpOf(f)[1]/2);cur.x=x;cur.y=y;closeSheet();toast('Move it, ROTATE, PLACE — or MENU to store it');}
+function pickFurn(i){const f=S.rooms[SC.n].furn[i];if(FURN[f.k]&&FURN[f.k].fixed){toast(`${FURN[f.k].n} is built into the bathroom`);return;}decor={k:f.k,r:f.r||0,from:f};const [x,y]=SC.G.pt(f.u+fpOf(f)[0]/2,f.v+fpOf(f)[1]/2);cur.x=x;cur.y=y;closeSheet();toast('Move it, ROTATE, PLACE — or MENU to store it');}
 function placeDecor(){if(!decor)return;const f=decorF(),G=SC.G;if(!canPlace(G,f,decor.from)){toast("It doesn't fit there — find a free green spot");sfx(180);return;}
  const fs=S.rooms[SC.n].furn;if(decor.from){Object.assign(decor.from,{u:f.u,v:f.v,r:f.r});}else fs.push({k:f.k,u:f.u,v:f.v,r:f.r});
  toast(`${furnName(decor.k)} placed`);sfx(720);decor=null;rebuildOcc(G,sceneFurn());save(1);updateInfo();const n=SC.n;if(TN[n])setTimeout(()=>emote(n,'happy'),300);}

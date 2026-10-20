@@ -14,7 +14,7 @@ const USE={bed:{act:'sleep',pose:'sleep',at:[1,1.0,33],ly:.9},bed_grey:{act:'sle
  sofa_red:{act:'sit',pose:'sit',at:[1,.62,29]},sofa_cream:{act:'sit',pose:'sit',at:[1,.62,29]},sofa_grey:{act:'sit',pose:'sit',at:[1,.62,29]},sofa_black:{act:'sit',pose:'sit',at:[1,.62,29]},
  armchair:{act:'sit',pose:'sit',at:[.5,.62,29]},chair_red:{act:'sit',pose:'sit',at:[.5,.52,33]},bench_blue:{act:'lift',pose:'sit',at:[1,.5,30]},
  tv:{act:'tv',pose:'tv'},fridge:{act:'fridge',pose:'fridge'},fridge2:{act:'fridge',pose:'fridge'},counter:{act:'cook',pose:'eat'},table_dining:{act:'eat',pose:'eat'},table_coffee:{act:'eat',pose:'eat'},
- toilet:{act:'toilet',pose:'front'},sink:{act:'wash',pose:'front'},vanity:{act:'wash',pose:'front'},bathtub:{act:'bath',pose:'bath',at:[1,.5,10],clip:.5},shower:{act:'shower',pose:'in',at:[.5,.5,7]},
+ toilet:{act:'toilet',pose:'front'},sink:{act:'wash',pose:'front'},vanity:{act:'wash',pose:'front'},bathtub:{act:'bath',pose:'bath',at:[1,.5,10],clip:.5},shower_glass:{act:'shower',pose:'shower',at:[1,1,6],frontOnly:1,dur:12},bed_apt:{act:'sleep',pose:'sleep',at:[1,1.0,33],ly:.9},shower:{act:'shower',pose:'in',at:[.5,.5,7]},
  desk:{act:'read',pose:'sit',at:[1,1.38,31],back:1},bookshelf:{act:'read',pose:'front'},bookcase_red:{act:'read',pose:'front'},
  treadmill:{act:'run',pose:'run',at:[.85,.5,16]},machine_red:{act:'run',pose:'front'},bench_black:{act:'lift',pose:'squat'},kettlebell:{act:'lift',pose:'squat'},
  ball:{act:'stretch',pose:'ball',at:[.5,.5,44]},pullup:{act:'pull',pose:'in',at:[.5,.5,5],pull:1},speedbag:{act:'punch',pose:'punch'},djbooth:{act:'dj',pose:'dj'}};
@@ -39,7 +39,7 @@ function pinPoly(x,y,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){c
 function buildGrid(sc){let G;
  if(sc.kind=='place'){G=mkGrid(10,10,[500,170],[45,22.5],[-45,22.5]);for(let u=0;u<10;u++)for(let v=0;v<10;v++)G.zone[u][v]='F';}
  else if(sc.R.type=='tile'){const R=sc.R;G=mkGrid(R.cols,R.rows,R.O,[R.TW/2,R.TW/4],[-R.TW/2,R.TW/4]);
-  for(const z in R.zones){const [u0,v0,w,h]=R.zones[z].r;for(let u=u0;u<u0+w;u++)for(let v=v0;v<v0+h;v++)G.zone[u][v]=z;}
+  for(const z in R.zones)(R.zones[z].rs||[R.zones[z].r]).forEach(([u0,v0,w,h])=>{for(let u=u0;u<u0+w;u++)for(let v=v0;v<v0+h;v++)if(G.in(u,v))G.zone[u][v]=z;});
   R.doors.forEach(([a,b,c,d])=>G.door.add(G.ek(a,b,c,d)));}
  else{const R=sc.R;G=mkGrid(R.cols,R.rows,R.O,R.eu,R.ev);
   for(const z in R.zones)R.zones[z].rs.forEach(([u0,v0,w,h])=>{for(let u=u0;u<u0+w;u++)for(let v=v0;v<v0+h;v++)if(G.in(u,v))G.zone[u][v]=z;});
@@ -76,19 +76,19 @@ function usePoint(G,f){const d=FDEF[f.k],U=d&&d.use;if(!U)return null;const [w,h
  const front=[];if(r==0)for(let i=0;i<w;i++)front.push([f.u+i,f.v+h]);else if(r==1)for(let j=0;j<h;j++)front.push([f.u+w,f.v+j]);else if(r==2)for(let i=0;i<w;i++)front.push([f.u+i,f.v-1]);else for(let j=0;j<h;j++)front.push([f.u-1,f.v+j]);
  const side=[];for(let i=-1;i<=w;i++)for(let j=-1;j<=h;j++){if(i>=0&&i<w&&j>=0&&j<h)continue;if((i<0||i>=w)&&(j<0||j>=h))continue;side.push([f.u+i,f.v+j]);}
  const z=G.zone[f.u]&&G.zone[f.u][f.v],behind=([u,v])=>r==0?v<f.v:r==1?u<f.u:r==2?v>=f.v+h:u>=f.u+w;
- const cand=[...front,...side.filter(p=>!front.some(q=>q[0]==p[0]&&q[1]==p[1])&&!behind(p))].filter(([u,v])=>G.free(u,v)&&G.zone[u][v]==z);
+ const cand=[...front,...(U.frontOnly?[]:side.filter(p=>!front.some(q=>q[0]==p[0]&&q[1]==p[1])&&!behind(p)))].filter(([u,v])=>G.free(u,v)&&G.zone[u][v]==z);
  let draw=[b.cx,b.by],depth=b.depth+.05,gp=null;
  if(U.at){const [gu,gv]=locToGrid(f.k,r,U.at[0],U.at[1]),q=G.pt(f.u+gu,f.v+gv),KZ=G.eu[0]/45;draw=[q[0],q[1]-U.at[2]*KZ];gp=U.ly!=null?[...locToGrid(f.k,r,U.at[0],U.ly),r==1?0:1]:[gu,gv];
   // facing the camera (r 0/1): the tenant is drawn over the piece, then the piece's front layer (arms, blanket) over the tenant
   depth=r<2?b.depth+.05:b.depth-.05;}
  // lying axis on screen (head direction), for beds
  let axis=null;if(U.pose=='sleep'||U.pose=='bath'){const h0=locToGrid(f.k,r,1,0),h1=locToGrid(f.k,r,1,1),A=G.pt(h0[0],h0[1]),B=G.pt(h1[0],h1[1]);axis=Math.atan2(A[0]-B[0],-(A[1]-B[1]));}
- return{f,act:U.act,pose:U.pose,stand:cand,draw,depth,gp,axis,r,clip:U.clip,back:U.back,pull:U.pull,face:r==1||r==2?'left':'right',away:r>=2};}
+ return{f,act:U.act,pose:U.pose,stand:cand,draw,depth,gp,axis,r,clip:U.clip,back:U.back,pull:U.pull,dur:U.dur,face:r==1||r==2?'left':'right',away:r>=2};}
 
 // ---------------- rendering of tile scenes ----------------
 function patFor(g,G,id){const t=tex(id);if(!ok(t))return null;const p=g.createPattern(t,'repeat'),s=t.naturalWidth;p.setTransform(new DOMMatrix([G.eu[0]/s,G.eu[1]/s,G.ev[0]/s,G.ev[1]/s,G.O[0],G.O[1]]));return p;}
 function tileQuad(G,u,v,w=1,h=1){return[G.pt(u,v),G.pt(u+w,v),G.pt(u+w,v+h),G.pt(u,v+h)];}
-function drawRoomShell(g,time){const R=SC.R,G=SC.G,WH=R.WH,th=R.theme;
+function drawRoomShell(g,time){const R=SC.R,G=SC.G,WH=R.WH,th=R.theme;if(R.style=='apt')return drawAptShell(g,time);
  g.fillStyle=th.bg;g.fillRect(-500,-500,SC.W+1000,SC.H+1000);
  // floors (the sheet's tile textures, mapped onto the iso grid)
  for(const z in R.zones){const Z=R.zones[z],[u0,v0,w,h]=Z.r,p=patFor(g,G,Z.tex);poly(g,tileQuad(G,u0,v0,w,h));g.fillStyle=p||'#3a3440';g.fill();
@@ -178,22 +178,23 @@ function usables(){const L=[],G=SC.G;
 
 // ---------------- tenant entities ----------------
 const SPD=2.3; // tiles per second
-function tPos(t){if(t.U&&t.state=='use'&&t.U.draw&&t.onIt)return t.U.draw;return SC.G.pt(t.fu,t.fv);}
-function tDepth(t){if(t.U&&t.state=='use'&&t.onIt)return t.U.depth;return t.fu+t.fv;}
+function tPos(t){if(t.U&&t.state=='use'&&t.U.draw&&t.onIt)return t.U.pose=='shower'?showerPos(t):t.U.draw;return SC.G.pt(t.fu,t.fv);}
+function tDepth(t){if(t.U&&t.state=='use'&&t.onIt)return t.U.pose=='shower'&&showerStep(t)<.5?t.fu+t.fv:t.U.depth;return t.fu+t.fv;}
 function placeT(t,u,v){t.fu=u+.5;t.fv=v+.5;t.u=u;t.v=v;}
 function newT(n,u,v){const t={n,u,v,fu:u+.5,fv:v+.5,path:[],face:'down',dir:1,state:'idle',U:null,useT:0,idle:.6+Math.random()*1.5,walkT:0,emo:null,emoT:0,bubble:null,alpha:1,onArrive:null,x:0,y:0};return t;}
 function goTo(t,goal,then){const G=SC.G,p=astar(G,[t.u,t.v],goal,null);if(!p){return false;}t.path=p.slice(1);t.onArrive=then||null;t.state='walk';t.onIt=false;return true;}
 function goUse(t,U,then){const G=SC.G;let best=null;for(const s of U.stand){const p=astar(G,[t.u,t.v],s,null);if(p&&(!best||p.length<best.length))best=p;}if(!best)return false;
  t.path=best.slice(1);t.state='walk';t.onIt=false;t.onArrive=()=>startUse(t,U,then);return true;}
-const ON_POSES=['sit','sleep','bath','in','run','dj','ball'];
-function startUse(t,U,then){t.state='use';t.U=U;t.onIt=ON_POSES.includes(U.pose);t.useT=U.dur||(U.pose=='sleep'?14:U.pose=='dj'?999:6+Math.random()*4);t.useDur=t.useT;
+const ON_POSES=['sit','sleep','bath','in','run','dj','ball','shower'];
+function startUse(t,U,then){t.state='use';t.U=U;t.onIt=ON_POSES.includes(U.pose);t.useT=U.pose=='shower'?(t.n=='Ophion'?20:12):U.dur||(U.pose=='sleep'?14:U.pose=='dj'?999:6+Math.random()*4);t.useDur=t.useT;t.towel=0;
  const ic={fridge:'food',cook:'food',sleep:'zz',tv:'note',read:'note',dj:'note',bath:'drop',shower:'drop',wash:'drop',toilet:'drop',run:'fit',lift:'fit',stretch:'fit',pull:'fit',punch:'fit',sit:'heart'}[U.act];
  if(ic)t.bubble={k:ic,t:U.pose=='sleep'||U.pose=='dj'?999:3.2};
  if(U.f&&U.act=='fridge')t.fridgeOpen=1.2;
  t.thenUse=then||null;if(t.onUseStart){const f=t.onUseStart;t.onUseStart=null;setTimeout(f,450);}}
 function endUse(t){const U=t.U;if(U&&NEED_OF[U.act]&&SC.kind=='room'){const q=needs(t.n);q[NEED_OF[U.act]]=Math.min(100,q[NEED_OF[U.act]]+(U.act=='sleep'?60:45));if(U.act=='fridge'||U.act=='cook'){const fr=S.rooms[t.n].fridge;const k=Object.keys(fr).find(q=>fr[q]>0);/* the tenant snacks from stock only when you feed them; idle snacking is free */}}
- t.state='idle';t.U=null;t.onIt=false;t.bubble=t.bubble&&t.bubble.t>50?null:t.bubble;t.idle=1.2+Math.random()*2.5;const th=t.thenUse;t.thenUse=null;th&&th();}
-function halt(t){if(!t)return;if(t.state=='use'&&t.onIt){t.onIt=false;}t.path=[];t.onArrive=null;t.U=null;t.state='idle';t.bubble=null;t.idle=4;}
+ const wasShower=U&&U.pose=='shower';t.state='idle';t.U=null;t.onIt=false;t.bubble=t.bubble&&t.bubble.t>50?null:t.bubble;t.idle=1.2+Math.random()*2.5;
+ if(wasShower){t.towel=t.n=='Ophion'?5.6:5;t.idle=t.towel+.4;t.face='down';if(t.n!='Ophion'){t.emo='happy';t.emoT=2.4;}}const th=t.thenUse;t.thenUse=null;th&&th();}
+function halt(t){if(!t)return;t.towel=0;if(t.state=='use'&&t.onIt){t.onIt=false;}t.path=[];t.onArrive=null;t.U=null;t.state='idle';t.bubble=null;t.idle=4;}
 // pick something to do (needs + schedule + workplace)
 function think(t){const G=SC.G,n=t.n,L=usables();
  if(t.transit){const E=t.transit;t.transit=null;if(!goTo(t,E.t,()=>{t.state='out';t.outT=0;t.outV=E.out;t.after=()=>{delete TN[t.n];};}))delete TN[t.n];return;}
@@ -221,7 +222,7 @@ function wanderT(t){const R=reach(SC.G,[t.u,t.v],null).filter(([u,v])=>Math.abs(
 function exitOf(){if(SC.kind=='room')return SC.R.entry;return SC.P.entry;}
 function leaveT(t,after){const E=exitOf();halt(t);t.leaving=1;if(!E){after&&after();return;}const ok=goTo(t,E.t,()=>{t.state='out';t.outT=0;t.outV=E.out;t.after=after;});if(!ok){t.state='out';t.outT=0;t.outV=E.out;t.after=after;}}
 function arriveT(n,via){const E=via||exitOf();if(!E)return null;const t=newT(n,E.t[0],E.t[1]);t.fu=E.t[0]+.5+E.out[0]*.9;t.fv=E.t[1]+.5+E.out[1]*.9;t.alpha=0;t.state='in';t.inT=0;t.inV=E.out;return t;}
-function updT(t,dt){if(t.emoT>0){t.emoT-=dt;if(t.emoT<=0)t.emo=null;}if(t.bubble){t.bubble.t-=dt;if(t.bubble.t<=0)t.bubble=null;}if(t.fridgeOpen>0)t.fridgeOpen-=dt;
+function updT(t,dt){if(t.towel>0)t.towel=Math.max(0,t.towel-dt);if(t.emoT>0){t.emoT-=dt;if(t.emoT<=0)t.emo=null;}if(t.bubble){t.bubble.t-=dt;if(t.bubble.t<=0)t.bubble=null;}if(t.fridgeOpen>0)t.fridgeOpen-=dt;
  if(t.state=='in'){t.inT+=dt*SPD;const k=Math.min(1,t.inT/.9);t.fu=t.u+.5+t.inV[0]*.9*(1-k);t.fv=t.v+.5+t.inV[1]*.9*(1-k);t.alpha=k;t.walkT+=dt;t.dir=(-t.inV[0]+t.inV[1])>0?-1:1;t.face=-(t.inV[0]+t.inV[1])>0?'down':'up';if(k>=1){t.state='idle';t.idle=.3;}return;}
  if(t.state=='out'){t.outT+=dt*SPD;const k=Math.min(1,t.outT/.9);t.fu=t.u+.5+t.outV[0]*.9*k;t.fv=t.v+.5+t.outV[1]*.9*k;t.alpha=1-k;t.walkT+=dt;t.dir=(t.outV[0]-t.outV[1])>0?1:-1;t.face=(t.outV[0]+t.outV[1])>0?'down':'up';if(k>=1){t.gone=1;t.after&&t.after();}return;}
  if(t.state=='walk'){if(!t.path.length){t.state='idle';const f=t.onArrive;t.onArrive=null;f&&f();return;}
@@ -263,6 +264,7 @@ function chibiPick(t,time){const T=TENANTS[t.n];let n=null,im=null,flip=false,bo
   else if(P=='sleep'){n='chibi_front';rot=U.axis!=null?U.axis:1.1;sy=1+Math.sin(time*1.4)*.018;}
   else if(P=='bath'){im=sitImg(t.n);clip=U.clip||.5;const fr=U.f?(r==1||r==3):false;flip=(fr?'right':'left')!=SIT_NATIVE;}
   else if(P=='run'){n='walk_'+(Math.floor(time*13)%T.walkN);const face=U.f?(r==0||r==1?'right':'left'):'right';flip=face!=T.walkFace;bob=Math.abs(Math.sin(time*13*Math.PI/2))*2;}
+  else if(P=='shower'){n=showerFrame(t);bob=n.startsWith('shower_shower')?Math.abs(Math.sin(time*3))*1.2:0;}
   else if(P=='in'){n=U.pull?'chibi_back':'chibi_front';if(U.pull)bob=8+Math.sin(time*2.6)*9;else bob=Math.sin(time*2)*1;}
   else if(P=='squat'){const d=(1-Math.cos(time*2.6))/2;n=d>.7?'emote_angry':'chibi_front';sy=1-d*.11;dy=0;
    const bar=(g,x,y,w,h)=>{const by=y-h*.5*sy;g.save();g.lineCap='round';g.strokeStyle='#35202a';g.lineWidth=5;g.beginPath();g.moveTo(x-H*.48,by);g.lineTo(x+H*.48,by);g.stroke();g.strokeStyle='#d8dee6';g.lineWidth=2.6;g.stroke();
@@ -281,8 +283,11 @@ function chibiPick(t,time){const T=TENANTS[t.n];let n=null,im=null,flip=false,bo
    if(k==2)post.push((g,x,y,w,h)=>{g.save();g.font=`900 ${Math.round(h*.16)}px Georgia,serif`;g.fillStyle='#fff';g.strokeStyle='#35202a';g.lineWidth=3;const tx=x+(flip?-1:1)*w*.42,ty=y-h*.9;g.strokeText('!',tx,ty);g.fillText('!',tx,ty);g.restore();});}
   else n='chibi_front';}
  else if(t.act){const A={talk:'emote_smile',feed:'emote_happy'};n=A[t.act]||'chibi_front';}
+ else if(t.towel>0&&t.n=='Ophion'){const k=Math.min(3,Math.floor((5.6-t.towel)/1.4));n='shower_'+OPH_AFTER[k];bob=k==0?Math.abs(Math.sin(time*16))*1.5:0;dx=k==0?Math.sin(time*30)*1.5:0;}
  else{// standing idle: cycle through the sheet's idle/emote poses and side views so they feel alive
   const q=IDLE_SEQ[Math.floor((time+sd*3)/2.6)%IDLE_SEQ.length];if(t.face=='up')n='chibi_back';else if(q=='side')n=t.dir>0?'chibi_right':'chibi_left';else n=q;bob=Math.sin(time*2+sd)*.6;}
+ if(t.towel>0&&t.n!='Ophion'&&t.state!='use')post.push((g,x,y,w,h)=>drawTowel(g,t,x,y,w,h,time));
+ if(t.towel>0&&t.n=='Ophion'&&t.towel>4.2)post.push((g,x,y,w,h)=>{g.save();g.fillStyle='rgba(190,228,255,.9)';for(let i=0;i<10;i++){const a=i*.63+time*3,rr=w*(.42+((i*7)%5)*.04);g.beginPath();g.ellipse(x+Math.cos(a)*rr,y-h*.55+Math.sin(a)*rr*.8,2.2,3.4,a,0,7);g.fill();}g.restore();});
  if(!im)im=tImg(t.n,n+'_hd.png');return{im,flip,bob,clip,rot,dx,dy,sy,pre,post};}
 // fridge door swung open while a tenant takes something out (drawn between the fridge and the tenant)
 function drawFridgeDoor(g,G,f,k){const r=f.r||0,KZ=G.eu[0]/45,P=(x,y,z)=>{const [a,b]=locToGrid(f.k,r,x,y),q=G.pt(f.u+a,f.v+b);return[q[0],q[1]-z*KZ];};const H=FA.DEF[f.k].h-6;

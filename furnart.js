@@ -109,6 +109,21 @@ const DEF={
   p.box(.08,.18,0,.92,.92,40,C.dark,{soft:3}).on('F',c=>{rr(c,.06,.15,.4,.75,.04,tone(C.dark,.12));rr(c,.54,.15,.4,.75,.04,tone(C.dark,.12));knob(c,.42,.5);knob(c,.58,.5);});
   p.box(.06,.16,40,.94,.94,46,'#f2ece4',{soft:2,gloss:.4}).on('T',c=>{c.beginPath();c.ellipse(.5,.55,.26,.3,0,0,7);c.fillStyle='#c9d6e6';c.fill();});p.cyl(.5,.26,46,58,.022,C.gold,{order:1});}},
  bathtub:{fp:[2,1],h:46,paint:p=>{[[.2,.2],[1.8,.2],[.2,.8],[1.8,.8]].forEach(([x,y])=>p.ball(x,y,0,6,C.gold));p.box(.06,.08,6,1.94,.94,42,C.white,{soft:9,gloss:.35,trim:C.gold}).on('T',c=>{const g=c.createLinearGradient(0,0,1,1);g.addColorStop(0,'#bfe8ff');g.addColorStop(1,'#6ab8e8');rr(c,.07,.14,.86,.72,.3,g);c.fillStyle='rgba(255,255,255,.75)';[[.3,.4],[.55,.6],[.7,.35]].forEach(([x,y])=>{c.beginPath();c.ellipse(x,y,.05,.09,0,0,7);c.fill();});});p.cyl(.2,.5,42,58,.03,C.gold,{order:1});}},
+ // v0.3.2 default apartment: cosy honey-wood bed + the built-in glass shower (2x2, sits in the bathroom's back-right corner;
+ // its back wall is the room's tiled partition). Glass panels in front of the tenant are kept in the front layer (furn front layer).
+ bed_apt:{fp:[2,2],h:92,paint:p=>{bed('#b9773f','#fff7e8','#f5b83c')(p);p.box(.3,.68,34,.78,.98,52,'#ffe3a8',{soft:8,gloss:.45,order:3}).on('T',c=>{c.fillStyle='rgba(230,140,60,.5)';c.beginPath();c.ellipse(.5,.5,.18,.18,0,0,7);c.fill();});}},
+ shower_glass:{fp:[2,2],h:156,paint:p=>{const GL='#cfeaff',FR='#5a5862';
+  p.box(0,0,0,2,2,6,'#dfe8f1',{soft:2,gloss:.35}).on('T',c=>{c.strokeStyle='rgba(90,110,140,.35)';c.lineWidth=.012;for(let i=1;i<6;i++){c.beginPath();c.moveTo(i/6,0);c.lineTo(i/6,1);c.stroke();c.beginPath();c.moveTo(0,i/6);c.lineTo(1,i/6);c.stroke();}
+   c.fillStyle='#8a96a6';c.fillRect(.66,.62,.1,.1);c.strokeStyle='#5a6272';c.lineWidth=.008;for(let i=0;i<4;i++){c.beginPath();c.moveTo(.67,.635+i*.022);c.lineTo(.75,.635+i*.022);c.stroke();}});
+  // riser pipe + valve on the back wall, arm and rain head (all behind the tenant)
+  p.cyl(.78,.07,6,134,.022,'#c8d0da');p.box(.62,.03,66,.86,.08,82,'#c8d0da',{soft:2,gloss:.5});p.box(.72,.05,130,.84,.5,134,'#c8d0da',{soft:1});p.cyl(.78,.5,124,130,.13,'#d8dee6',{top:'#9aa6b4'});
+  // back-left glass (behind) + its posts
+  p.box(0,0,6,.04,2,150,GL,{alpha:.24,gloss:.1,lit:.3,tf:.4}).on('R',c=>{c.fillStyle='rgba(255,255,255,.55)';c.fillRect(.18,.06,.05,.85);c.fillRect(.3,.06,.02,.85);});
+  p.box(0,0,0,.06,.06,152,FR);p.box(0,1.94,0,.06,2,152,FR,{order:1});
+  // front panels (in front of the tenant): right glass, front glass with door + handle, corner posts and top rail
+  p.box(1.96,0,6,2,1.96,150,GL,{alpha:.24,gloss:.1,lit:.3,tf:.4}).on('R',c=>{c.fillStyle='rgba(255,255,255,.6)';c.fillRect(.22,.06,.05,.85);c.fillRect(.34,.06,.02,.85);});
+  p.box(.06,1.96,6,1.96,2,150,GL,{alpha:.24,gloss:.1,lit:.3,tf:.4,order:1}).on('F',c=>{c.fillStyle='rgba(255,255,255,.6)';c.fillRect(.12,.06,.04,.85);c.fillRect(.2,.06,.016,.85);c.fillStyle='rgba(90,88,98,.85)';c.fillRect(.49,.02,.012,.96);c.fillStyle='#d8dee6';c.fillRect(.43,.42,.022,.2);});
+  p.box(1.94,1.94,0,2,2,152,FR,{order:2});p.box(1.94,0,0,2,.06,152,FR);p.box(.04,1.95,148,2,2,154,FR,{order:2});p.box(1.95,.04,148,2,2,154,FR,{order:2});}},
  shower:{fp:[1,1],h:132,paint:p=>{p.box(0,0,0,1,1,7,C.white,{soft:2}).on('T',c=>{c.fillStyle='#b8d8ee';c.fillRect(.1,.1,.8,.8);});p.cyl(.15,.15,7,128,.025,C.gold);p.box(.15,.12,118,.5,.2,124,C.gold);
   p.box(.02,.02,7,.98,.98,128,'#bfe6ff',{alpha:.3,gloss:.1,order:2,lit:.3,tf:.4}).on('F',c=>{c.fillStyle='rgba(255,255,255,.5)';c.fillRect(.15,.05,.06,.9);c.fillRect(.27,.05,.025,.9);}).on('R',c=>{c.fillStyle='rgba(255,255,255,.4)';c.fillRect(.2,.05,.05,.9);});}},
  desk:{fp:[2,2],h:80,paint:p=>{p.box(0,.05,0,.5,.8,44,C.wood,{soft:3}).on('F',c=>{rr(c,.1,.1,.8,.35,.05,tone(C.wood,.12));rr(c,.1,.55,.8,.35,.05,tone(C.wood,.12));knob(c,.5,.27);knob(c,.5,.72);});p.box(1.5,.05,0,2,.8,44,C.wood,{soft:3});
