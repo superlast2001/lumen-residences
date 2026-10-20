@@ -17,6 +17,12 @@ You start in the lobby. **FLOOR** opens the building-front floor picker, and the
 - Ophion's and Batzz's source CG panels crop their wings and tail at the edges.
 - There is no player avatar, to avoid inventing a character; a cursor is used instead. The ring is a canvas drawing.
 
+## v0.3.4 — big, mostly empty flat at the v0.3.2 scale
+- The default camera is back to v0.3.2's close-up scale (zoom 0.6: big tiles, big chibis). You pan around the flat with the D-pad or by dragging. The **−** button or a pinch zooms out to the whole flat, and **+** zooms back in (up to 1.5×).
+- The flat grew to **474 floor tiles** (26×20 grid; v0.3.2 had 179, v0.3.3 had 240). It has seven walled rooms joined by 12 doorways: Balcony 40 tiles · Living room 90 · Entrance hall & corridor 93 · Kitchen & dining 81 · Study 56 · Bedroom 72 · Bathroom 42 (with the walk-in glass shower).
+- Starter flats are nearly empty again: bed, walk-in shower, sink and fridge. Everything else (all the v0.3.3 starter and study pieces, plus the Luxury tier) is bought in the shop and placed with MENU → Decorate.
+- v0.3.3 saves migrate: auto-placed starter furniture is dropped, and anything the player bought (placed or stored) goes to storage.
+
 ## v0.3.3 — a real multi-room flat, much more furniture, NPCs everywhere
 - **Bigger default apartment** (18×15 grid, 240 floor tiles, up from 179) with seven walled rooms: balcony (decking, sea view, glass railing, yellow-curtained glass sliding doors), living room, entrance hall and corridor, kitchen and dining, study, bedroom, and a bathroom with the walk-in glass shower. Interior walls are cut-away orange walls with white caps (Sims style) so every room stays readable. Tenants only cross between rooms through the 12 doorways (A* plus a door-edge check in the tests). Each room has its own floor: cream tiles, kitchen checks, honey and walnut planks, blue bathroom tiles and decking.
 - **Camera:** the default zoom fits the whole flat, front door included, on a 390×844 phone. Zoom in and out with the **+ / −** buttons, pinch or the mouse wheel (up to 3.2×).

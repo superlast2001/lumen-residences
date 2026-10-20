@@ -1,7 +1,7 @@
 'use strict';
 // Lumen Residences — engine. Kairosoft-style portrait layout (game view on top, D-pad panel below),
 // Ero-Condo-style tenant loop. Dialogue system, dev panel, save and sfx follow Fantasy Town v0.0.2.3.
-const VERSION='v0.3.3',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
+const VERSION='v0.3.4',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 const DPR=()=>Math.min(3,window.devicePixelRatio||1);
@@ -34,7 +34,7 @@ function load(key=SAVE){try{const j=JSON.parse(localStorage.getItem(key));if(j&&
 // and placed goes back into storage (inventory); only the old built-in defaults are dropped, so nothing bought is ever lost.
 function migrateRooms(j){const want=ROOM_STYLE=='themed'?1:APT_V,had=j.roomV||1;if(had==want)return;j.inv=j.inv||{};for(const n of TENANT_ORDER){const r=j.rooms[n];if(!r)continue;
  const back={};(r.furn||[]).forEach(f=>{if(FURN[f.k]&&!FURN[f.k].fixed&&!f.fixed)back[f.k]=(back[f.k]||0)+1;});
- const oldDef=had==1?((ROOMS_THEMED[n]||{}).defFurn||[]).map(f=>f.k):had==2?APT_V2_DEF:[];oldDef.forEach(k=>{if(back[k]>0)back[k]--;});
+ const oldDef=had==1?((ROOMS_THEMED[n]||{}).defFurn||[]).map(f=>f.k):had==2?APT_V2_DEF:had==3?aptV3Def(n):[];oldDef.forEach(k=>{if(back[k]>0)back[k]--;});
  for(const k in back)if(back[k]>0)j.inv[k]=(j.inv[k]||0)+back[k];r.furn=(ROOMS[n].defFurn||[]).map(f=>({r:0,...f}));}j.roomV=want;}
 function save(quiet,key=SAVE){try{localStorage.setItem(key,JSON.stringify(S));if(!quiet)toast('Game saved');}catch(e){}}
 S=load()||newState();
@@ -86,7 +86,10 @@ function baseZoom(){const [vw,vh]=viewSize();if(SC.kind=='room'){if(SC.R.style==
 let _abx=null;function aptBox(){if(_abx&&_abx.G===SC.G&&_abx.W==SC.W)return _abx.b;const b=aptBox0();_abx={G:SC.G,W:SC.W,b};return b;}
 function aptBox0(){const G=SC.G,R=SC.R;let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(let u=0;u<G.cols;u++)for(let v=0;v<G.rows;v++)if(G.floor(u,v))tileQuad(G,u,v).forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y-R.WH-8);y1=Math.max(y1,y+36);});return{x0:x0-14,x1:x1+14,y0,y1,cx:(x0+x1)/2,cy:(y0+y1)/2};}
 function fitZoom(){return baseZoom()*(cam.zf||1);}
-function setZoom(f,keep){cam.zf=clamp(f,1,3.2);cam.z=fitZoom();if(!keep&&cam.zf>1.01){cam.x=cur.x;cam.y=cur.y;}clampCam();const b=$('zOut');if(b)b.disabled=cam.zf<=1.01;}
+// apt flats open at the v0.3.2 close-up scale (R.z0) and can zoom out to the whole flat or in to 1.5x
+function zoomMax(){const b=baseZoom();return SC.kind=='room'&&SC.R.style=='apt'?Math.max(1.5,b)/b:3.2;}
+function zoomDef(){const b=baseZoom();return SC.kind=='room'&&SC.R.style=='apt'?Math.max(1,(SC.R.z0||.6)/b):1;}
+function setZoom(f,keep){cam.zf=clamp(f,1,zoomMax());cam.z=fitZoom();if(!keep&&cam.zf>1.01){cam.x=cur.x;cam.y=cur.y;}clampCam();const b=$('zOut');if(b)b.disabled=cam.zf<=1.01;}
 function clampCam(){const [vw,vh]=viewSize(),z=cam.z,hw=vw/2/z,hh=vh/2/z;if(SC.kind=='room'&&SC.R.style=='apt'&&(cam.zf||1)<=1.01){const B=aptBox();cam.x=B.cx;cam.y=B.cy-30/z;return;}cam.x=SC.W<=hw*2?SC.W/2:clamp(cam.x,hw,SC.W-hw);const top=SC.kind=='place'?40:0;cam.y=SC.H-top<=hh*2?(SC.H+top)/2:clamp(cam.y,hh+top,SC.H-hh);}
 const W2S=(x,y)=>{const [vw,vh]=viewSize();return[(x-cam.x)*cam.z+vw/2,(y-cam.y)*cam.z+vh/2];};
 const S2W=(sx,sy)=>{const [vw,vh]=viewSize();return[(sx-vw/2)/cam.z+cam.x,(sy-vh/2)/cam.z+cam.y];};
@@ -284,7 +287,7 @@ $('dlg').onclick=()=>{if(dlg.hidden){dlg.hidden=false;$('dlgBox').style.visibili
 addEventListener('resize',()=>{if(dlg.on)layoutCG();});
 
 // ---------------- scenes: enter / floor picker / teleport ----------------
-function enterScene(id,quiet){if(decor)cancelDecor();setScene(id);S.scene=id;TN={};EX=[];exOpen=null;hover=null;sel=null;syncTenants(true);exTick();cam.zf=1;cam.z=fitZoom();{const b=$('zOut');if(b)b.disabled=true;}
+function enterScene(id,quiet){if(decor)cancelDecor();setScene(id);S.scene=id;TN={};EX=[];exOpen=null;hover=null;sel=null;syncTenants(true);exTick();cam.zf=zoomDef();cam.z=fitZoom();{const b=$('zOut');if(b)b.disabled=cam.zf<=1.01;}
  if(SC.kind=='room'){const t=TN[SC.n],G=SC.G;if(t){[cur.x,cur.y]=G.tc(t.u,t.v);}else{const E=SC.R.entry;[cur.x,cur.y]=SC.R.type=='tile'?G.pt(SC.R.cols/2,SC.R.rows/2):G.tc(...E.t);}}else{cur.x=500;cur.y=430;}
  cam.x=cur.x;cam.y=cur.y-SC.ch*.3;clampCam();closeFloors();closeSheet();save(1);updateHud();infoKey='';if(!quiet)toast(SC.kind=='room'?SC.R.name:SC.title);sfx(660);
  if(SC.kind=='room'&&TN[SC.n]&&R(SC.n).talk==0)setTimeout(()=>emote(SC.n,'happy'),500);}

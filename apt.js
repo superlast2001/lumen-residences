@@ -5,12 +5,12 @@
 // glass sliding doors, cut-away interior walls between the rooms (each room has its own floor: cream tiles, kitchen checks, honey
 // and walnut planks, blue bathroom tiles), and the walk-in glass shower against a tiled wall (furnart.js shower_glass).
 // Static parts are painted once into a cache; partitions and low walls are depth-sorted entities so nobody phases through them.
-const APT={cv:null,key:''},AS=2;
+const APT={cv:null,key:''};let AS=2;
 const AC_={wallL:['#f8a62a','#ee9118'],wallR:['#f09a20','#e2830f'],base:'#4b4a52',baseHi:'#77757f',ol:'#34323a',slabL:'#f29a22',slabR:'#e0820f',
  tile:'#f8f0e6',grout:'rgba(176,150,124,.42)',btile:'#b6c6d9',bgrout:'rgba(86,106,138,.42)'};
 // back walls that stand tall: L-type (u-line, faces +u) and R-type (v-line, faces +v) edges with no floor behind them
-function aptTall(G){const L=[];for(let u=0;u<G.cols;u++)for(let v=0;v<G.rows;v++){if(!G.floor(u,v))continue;
-  if(!G.floor(u-1,v)&&u<=3)L.push({side:'L',line:u,s:v});if(!G.floor(u,v-1)&&v<=2)L.push({side:'R',line:v,s:u});}return L;}
+function aptTall(G,R){const L=[],bu=R&&R.backU!=null?R.backU:3,bv=R&&R.backV!=null?R.backV:2;for(let u=0;u<G.cols;u++)for(let v=0;v<G.rows;v++){if(!G.floor(u,v))continue;
+  if(!G.floor(u-1,v)&&u<=bu)L.push({side:'L',line:u,s:v});if(!G.floor(u,v-1)&&v<=bv)L.push({side:'R',line:v,s:u});}return L;}
 const isOpen=(R,w)=>{const O=R.openView;return O&&w.side==O.side&&w.line==O.line&&w.s>=O.v0&&w.s<O.v1;};
 // a point on a wall plane: s along the wall (tile units), h up (px)
 function aptWP(G,side,line,s,h){const p=side=='L'?G.pt(line,s):G.pt(s,line);return[p[0],p[1]-h];}
@@ -28,7 +28,7 @@ function aptFloorTile(c,G,u,v,kind){const P=G.pt,F=FLOORS[kind]||FLOORS.cream,k=
   poly(c,tileQuad(G,u,v));c.strokeStyle=F.g;c.globalAlpha=.5;c.stroke();c.globalAlpha=1;return;}
  if(F.deck){for(let i=1;i<4;i++){c.beginPath();c.moveTo(...P(u+i/4,v));c.lineTo(...P(u+i/4,v+1));c.stroke();}poly(c,tileQuad(G,u,v));c.stroke();return;}
  c.stroke();if(kind=='blue'){c.beginPath();const m1=P(u+.5,v),m2=P(u+.5,v+1),m3=P(u,v+.5),m4=P(u+1,v+.5);c.moveTo(...m1);c.lineTo(...m2);c.moveTo(...m3);c.lineTo(...m4);c.stroke();}}
-function buildApt(R,G,night){const cv=document.createElement('canvas');cv.width=Math.ceil(SC.W*AS);cv.height=Math.ceil(SC.H*AS);const c=cv.getContext('2d');c.scale(AS,AS);c.lineJoin='round';
+function buildApt(R,G,night){AS=Math.min(2,Math.sqrt(7.5e6/(SC.W*SC.H)));const cv=document.createElement('canvas');cv.width=Math.ceil(SC.W*AS);cv.height=Math.ceil(SC.H*AS);const c=cv.getContext('2d');c.scale(AS,AS);c.lineJoin='round';
  const P=G.pt,F=(u,v)=>G.floor(u,v),WH=R.WH,D=34,fk=(u,v)=>(R.zones[G.zone[u][v]]||{}).floor||'cream';
  // 1) floor slab sides along the open front edges (decking edge under the balcony)
  for(let u=0;u<G.cols;u++)for(let v=0;v<G.rows;v++){if(!F(u,v))continue;const deck=fk(u,v)=='deck';
@@ -41,14 +41,14 @@ function buildApt(R,G,night){const cv=document.createElement('canvas');cv.width=
  for(let u=0;u<G.cols;u++)for(let v=0;v<G.rows;v++)if(F(u,v))aptFloorTile(c,G,u,v,fk(u,v));
  // gloss + light, clipped to the floor
  c.save();c.beginPath();for(let u=0;u<G.cols;u++)for(let v=0;v<G.rows;v++)if(F(u,v)){const q=tileQuad(G,u,v);c.moveTo(...q[0]);q.slice(1).forEach(p=>c.lineTo(...p));c.closePath();}c.clip();
- aptTall(G).forEach(w=>{if(isOpen(R,w))return;const a=w.side=='L'?P(w.line,w.s):P(w.s,w.line),b=w.side=='L'?P(w.line,w.s+1):P(w.s+1,w.line),off=w.side=='L'?G.eu:G.ev,k=.7;
+ aptTall(G,R).forEach(w=>{if(isOpen(R,w))return;const a=w.side=='L'?P(w.line,w.s):P(w.s,w.line),b=w.side=='L'?P(w.line,w.s+1):P(w.s+1,w.line),off=w.side=='L'?G.eu:G.ev,k=.7;
   const q=[a,b,[b[0]+off[0]*k,b[1]+off[1]*k],[a[0]+off[0]*k,a[1]+off[1]*k]],gr=c.createLinearGradient(a[0],a[1],a[0]+off[0]*k,a[1]+off[1]*k);gr.addColorStop(0,'rgba(150,80,20,.20)');gr.addColorStop(1,'rgba(150,80,20,0)');poly(c,q);c.fillStyle=gr;c.fill();});
  // soft contact shade along the interior cut-away walls
  for(let u=1;u<G.cols;u++)for(let v=0;v<G.rows;v++)if(F(u,v)&&F(u-1,v)&&G.zone[u][v]!=G.zone[u-1][v]&&!G.door.has(G.ek(u-1,v,u,v))){const q=[P(u,v),P(u,v+1),P(u+.25,v+1),P(u+.25,v)],gr=c.createLinearGradient(...P(u,v+.5),...P(u+.25,v+.5));gr.addColorStop(0,'rgba(120,60,20,.16)');gr.addColorStop(1,'rgba(120,60,20,0)');poly(c,q);c.fillStyle=gr;c.fill();}
  for(let v=1;v<G.rows;v++)for(let u=0;u<G.cols;u++)if(F(u,v)&&F(u,v-1)&&G.zone[u][v]!=G.zone[u][v-1]&&!G.door.has(G.ek(u,v-1,u,v))){const q=[P(u,v),P(u+1,v),P(u+1,v+.25),P(u,v+.25)],gr=c.createLinearGradient(...P(u+.5,v),...P(u+.5,v+.25));gr.addColorStop(0,'rgba(120,60,20,.16)');gr.addColorStop(1,'rgba(120,60,20,0)');poly(c,q);c.fillStyle=gr;c.fill();}
  if(!night){// sunlight: through the balcony glass doors into the living room, the front door glass and the windows
   const patch=(q,a0)=>{const gr=c.createLinearGradient(...q[0],...q[3]);gr.addColorStop(0,`rgba(255,250,232,${a0})`);gr.addColorStop(1,'rgba(255,250,232,0)');poly(c,q);c.fillStyle=gr;c.fill();};
-  (R.tallU||[]).forEach(T=>{for(let v=T.v0;v<Math.min(T.v1,6);v+=2){const va=v+.12,vb=v+1.88,L=3.2,sk=.5;patch([P(T.u,va),P(T.u,vb),P(T.u+L,vb+L*sk),P(T.u+L,va+L*sk)],.55);}});
+  (R.tallU||[]).forEach(T=>{for(let v=T.v0;v<Math.min(T.v1,9)-1;v+=2){const va=v+.12,vb=v+1.88,L=3.2,sk=.5;patch([P(T.u,va),P(T.u,vb),P(T.u+L,vb+L*sk),P(T.u+L,va+L*sk)],.55);}});
   const E=R.entry,u0=E.t[0];patch([P(u0+.18,0),P(u0+.82,0),P(u0+.82+.5,2.4),P(u0+.18+.5,2.4)],.45);
   (R.windows||[]).forEach(w=>{if(w.side=='R')patch([P(w.s0+.1,0),P(w.s1-.1,0),P(w.s1+.3,2),P(w.s0+.5,2)],.4);else patch([P(w.line,w.s0+.1),P(w.line,w.s1-.1),P(w.line+2,w.s1+.5),P(w.line+2,w.s0+.6)],.4);});}
  c.save();c.globalCompositeOperation='screen';const ctr=P(G.cols*.42,G.rows*.45);for(let i=-4;i<=4;i++){const x=ctr[0]+i*130;const gr=c.createLinearGradient(x-50,0,x+50,0);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.5,`rgba(255,255,255,${night?.04:.11})`);gr.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gr;c.save();c.translate(x,ctr[1]);c.rotate(-.45);c.fillRect(-50,-900,100,1800);c.restore();}c.restore();
@@ -59,7 +59,7 @@ function buildApt(R,G,night){const cv=document.createElement('canvas');cv.width=
  // door mats inside the front door
  {const E=R.entry;const q=[P(E.t[0]+.12,E.t[1]+.1),P(E.t[0]+.88,E.t[1]+.1),P(E.t[0]+.88,E.t[1]+.7),P(E.t[0]+.12,E.t[1]+.7)];poly(c,q);c.fillStyle='#7a5a44';c.fill();c.strokeStyle='#5a3e2c';c.lineWidth=1.5;c.stroke();}
  // 3) tall back walls (the balcony side is open air: sky + sea + glass railing instead)
- const T=aptTall(G),TW_=T.filter(w=>!isOpen(R,w));
+ const T=aptTall(G,R),TW_=T.filter(w=>!isOpen(R,w));
  if(R.openView)aptOpenView(c,G,R,night);
  TW_.forEach(w=>{const a=aptWP(G,w.side,w.line,w.s,0),b=aptWP(G,w.side,w.line,w.s+1,0),col=w.side=='L'?AC_.wallL:AC_.wallR;poly(c,[a,b,[b[0],b[1]-WH],[a[0],a[1]-WH]]);
   const gr=c.createLinearGradient(0,a[1]-WH,0,a[1]);gr.addColorStop(0,shade(col[0],.06));gr.addColorStop(1,col[1]);c.fillStyle=gr;c.fill();c.strokeStyle=col[1];c.lineWidth=1;c.stroke();});
@@ -79,13 +79,13 @@ function buildApt(R,G,night){const cv=document.createElement('canvas');cv.width=
  return cv;}
 // the balcony's open side: sky, sea and the far shore above a glass railing with a steel handrail
 function aptOpenView(c,G,R,night){const O=R.openView,W=O.v1-O.v0,WH=R.WH;
- onWall(c,G,O.side,O.line,O.v0,c=>{const top=WH+24;
+ onWall(c,G,O.side,O.line,O.v0,c=>{const top=WH+24,k=W/8;
   const g=c.createLinearGradient(0,0,0,top);g.addColorStop(0,night?'#3d3a78':'#bfe6ff');g.addColorStop(.75,night?'#1e2456':'#6ac0f2');g.addColorStop(1,night?'rgba(26,32,80,0)':'rgba(88,180,238,0)');c.fillStyle=g;c.fillRect(0,0,W,top);
-  if(!night){c.fillStyle='rgba(255,255,255,.92)';[[1.2,118,.6,10],[1.7,124,.45,8],[4.4,108,.7,11],[5,114,.42,8],[6.8,126,.5,9]].forEach(([x,y,rx,ry])=>{c.beginPath();c.ellipse(x,y,rx,ry,0,0,7);c.fill();});}
-  else{c.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<22;i++)c.fillRect(.2+((i*37)%76)/10,80+((i*53)%70),.025,1.4);c.fillStyle='#fff6d0';c.save();c.translate(5.6,126);c.scale(.1,8);c.beginPath();c.arc(0,0,1,0,7);c.restore();c.fill();}
+  if(!night){c.fillStyle='rgba(255,255,255,.92)';[[1.2,118,.6,10],[1.7,124,.45,8],[4.4,108,.7,11],[5,114,.42,8],[6.8,126,.5,9]].forEach(([x,y,rx,ry])=>{c.beginPath();c.ellipse(x*k,y,rx,ry,0,0,7);c.fill();});}
+  else{c.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<22;i++)c.fillRect((.2+((i*37)%76)/10)*k,80+((i*53)%70),.025,1.4);c.fillStyle='#fff6d0';c.save();c.translate(5.6,126);c.scale(.1,8);c.beginPath();c.arc(0,0,1,0,7);c.restore();c.fill();}
   // far shore with a little skyline, then the sea
-  c.fillStyle=night?'#2a2e5a':'#9cc0dc';for(let i=0;i<12;i++){const x=.2+i*.62,h=8+((i*41)%18);c.fillRect(x,64,.4,h);}c.fillStyle=night?'#ffe38a':'#e8f4ff';for(let i=0;i<16;i++)c.fillRect(.3+((i*29)%74)/10,66+((i*17)%14),.05,1.6);
-  c.fillStyle=night?'#1e3566':'#3d9ad6';c.fillRect(0,30,W,35);c.fillStyle=night?'rgba(150,180,255,.25)':'rgba(255,255,255,.5)';for(let i=0;i<14;i++)c.fillRect(.2+i*.56,36+((i*7)%22),.3,1.2);
+  c.fillStyle=night?'#2a2e5a':'#9cc0dc';for(let i=0;i<Math.round(12*k);i++){const x=.2+i*.62,h=8+((i*41)%18);c.fillRect(x,64,.4,h);}c.fillStyle=night?'#ffe38a':'#e8f4ff';for(let i=0;i<16;i++)c.fillRect((.3+((i*29)%74)/10)*k,66+((i*17)%14),.05,1.6);
+  c.fillStyle=night?'#1e3566':'#3d9ad6';c.fillRect(0,30,W,35);c.fillStyle=night?'rgba(150,180,255,.25)':'rgba(255,255,255,.5)';for(let i=0;i<Math.round(14*k);i++)c.fillRect(.2+i*.56,36+((i*7)%22),.3,1.2);
   // glass railing panels + posts + handrail
   c.fillStyle=night?'rgba(160,190,230,.22)':'rgba(220,240,255,.42)';c.fillRect(0,4,W,48);c.fillStyle=night?'rgba(255,255,255,.08)':'rgba(255,255,255,.35)';for(let i=0;i<W;i++){c.beginPath();c.moveTo(i+.15,6);c.lineTo(i+.3,6);c.lineTo(i+.55,50);c.lineTo(i+.4,50);c.fill();}
   c.fillStyle='#5c5a64';for(let i=0;i<=W;i++)c.fillRect(i-.03,0,.06,54);c.fillStyle='#8c8a94';c.fillRect(0,50,W,4);c.fillStyle='#d8dee6';c.fillRect(0,53,W,1.4);c.fillStyle='#4b4a52';c.fillRect(0,0,W,5);});}
@@ -131,12 +131,12 @@ function aptWalls(G,R){const E=[],LH=30,WH=R.WH;
   if(a&&G.zone[u-1][v]!=G.zone[u][v]){const T=TU.find(t=>t.u==u&&v>=t.v0&&v<t.v1);
    if(T){const o={door:(T.doors||[]).includes(v),back:v==T.v0,front:v==T.v1-1};E.push({depth:dep,d:g=>tallSegP(g,p0,p1,T,WH,o)});continue;}
    if(door(u-1,v,u,v)){if(!door(u-1,v-1,u,v-1))post(p1,dep);if(!door(u-1,v+1,u,v+1))post(p0,dep);}else low(p0,p1,dep);}
-  else if(!a&&u>3)low(p0,p1,dep);}
+  else if(!a&&u>(R.backU!=null?R.backU:3))low(p0,p1,dep);}
  for(let v=1;v<G.rows;v++)for(let u=0;u<G.cols;u++){const a=G.floor(u,v-1),b=G.floor(u,v);if(!b)continue;const p0=G.pt(u,v),p1=G.pt(u+1,v),dep=u+.5+v+.02;
   if(a&&G.zone[u][v-1]!=G.zone[u][v]){const T=TV.find(t=>t.v==v&&u>=t.u0&&u<t.u1);
    if(T){const o={back:u==T.u0,front:u==T.u1-1};E.push({depth:dep,d:g=>tallSegP(g,p0,p1,T,WH,o)});continue;}
    if(door(u,v-1,u,v)){if(!door(u-1,v-1,u-1,v))post(p0,dep);if(!door(u+1,v-1,u+1,v))post(p1,dep);}else low(p0,p1,dep);}
-  else if(!a&&v>2)low(p0,p1,dep);}
+  else if(!a&&v>(R.backV!=null?R.backV:2))low(p0,p1,dep);}
  return E;}
 // one tile of a tall partition between screen points p0 -> p1
 function tallSegP(g,p0,p1,T,WH,o){const Q=(s,h)=>[p0[0]+(p1[0]-p0[0])*s,p0[1]+(p1[1]-p0[1])*s-h];const FR='#5c5a64';

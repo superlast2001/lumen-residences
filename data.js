@@ -179,44 +179,33 @@ Ophion:{type:'paint',img:'assets/ophion/room_hd.jpg',W:1536,H:1024,ch:112,name:'
   {n:'Spa tub',act:'bath',pose:'bath',t:[20,30],at:[18,30.5],clip:.5},{n:'Vanity',act:'wash',pose:'front',t:[21,28]}],
  zoneLabel:{STUDY:[16,12],LOUNGE:[21,18.5],DINING:[25,12.5]}},
 };
-// ---- v0.3.3: the user's DEFAULT APARTMENT, now a real multi-room flat in the same look (orange walls, dark skirting, white wall caps,
-// glossy cream tiles, yellow curtains, glass front door, blue-tiled bathroom with the walk-in glass shower). Drawn in code on the tile
-// grid (apt.js) so walls, doorways, A* and depth sorting all work. 18x15 grid, 246 floor tiles (v0.3.2: 179, old themed rooms: 120).
-// Rooms: Balcony (decking + sea view, glass sliding doors) · Living room · Entrance hall & corridor · Kitchen & dining · Study · Bedroom · Bathroom.
-// Interior walls are cut-away (Sims style) so every room stays readable on a phone; tenants only cross between rooms through doorways.
+// ---- v0.3.4: the user's DEFAULT APARTMENT. Same look and the same close-up scale as v0.3.2 (orange walls, white wall caps, dark
+// skirting, glossy cream tiles, yellow curtains, glass front door, blue-tiled bathroom with the walk-in glass shower), but a much larger
+// flat to explore by panning: 26x20 grid, 474 floor tiles (v0.3.2: 179) in seven walled rooms joined by doorways.
+// Rooms: Balcony · Living room · Entrance hall & corridor · Kitchen & dining · Study · Bedroom · Bathroom.
+// Starter flats are nearly empty, as in v0.3.2 (bed, walk-in shower, sink, fridge); everything else is bought in the shop and placed.
+// Interior walls are cut-away so every room stays readable; tenants only cross between rooms through doorways.
 // The tenants' old themed rooms stay in ROOMS_THEMED: set ROOM_STYLE='themed' to switch back.
 const ROOM_STYLE='default';
-const APT_V=3,APT_V2_DEF=['bed_apt','sink','fridge'];
-// starter furniture: the same furnished flat for everyone, plus a study that suits each tenant
-const APT_BASE=[
- // balcony
- ['sunbed',0,0],['parasol',1,0],['table_patio',0,4],['chair_patio',0,3],['chair_patio',0,5,2],['lemon_tree',0,7],['planter_box',1,7],
- // living room
- ['tv_modern',5,0],['shelf_low',7,0],['plant_big',9,0],['lamp_modern',3,0],['rug_round',5,2],['table_coffee',5,3],['sofa_honey',5,4,2],['armchair_teal',8,2,3],['beanbag',3,5],['table_side',9,4],
- // entrance hall + corridor
- ['clock_tall',11,0],['plant_palm',11,5],['plant',3,6],
- // kitchen & dining
- ['counter_white',12,0],['stove',14,0],['fridge',15,0],['counter_white',16,0],['table_wood',14,3],['chair_dining',14,2],['chair_dining',15,2],['chair_dining',14,4,2],['chair_dining',15,4,2],['chair_dining',16,3,3],['plant',17,5],
- // bedroom
- ['bed_apt',11,8],['nightstand',10,8],['nightstand',13,8],['wardrobe_honey',8,11,1],['rug_stripe',10,11],['dresser',8,9,1],['mirror_floor',8,14,1],['lamp_floor',8,8],['monstera',13,14],
- // bathroom (the glass shower is built in)
- ['shower_glass',16,8,0,1],['vanity',14,11,1],['toilet',14,13,1],['bathtub',16,12],['washer',14,10,1],['towel_rack',17,11]];
-const APT_STUDY={
- Ares:[['treadmill',5,8],['bench_black',4,11],['ball',7,13],['kettlebell',7,8],['plant',3,13]],
- Zayne:[['desk_modern',5,8],['arcade',7,8],['speaker',3,11,1],['shelf_low',4,13,2],['beanbag',7,12]],
- Batzz:[['speedbag',7,8],['bench_black',4,11],['armchair',3,10,1],['dumbbells',5,13,2],['plant',7,13]],
- Ophion:[['desk_modern',5,8],['caseboard',7,8],['bookshelf',3,11,1],['globe',5,13],['cabinet_file',3,13,1]]};
+const APT_V=4,APT_V2_DEF=['bed_apt','sink','fridge'];
+// v0.3.3 auto-placed starter sets: only used to tell starter pieces from purchases when migrating v0.3.3 saves
+const APT_V3_BASE=['sunbed','parasol','table_patio','chair_patio','chair_patio','lemon_tree','planter_box','tv_modern','shelf_low','plant_big','lamp_modern','rug_round','table_coffee','sofa_honey','armchair_teal','beanbag','table_side',
+ 'clock_tall','plant_palm','plant','counter_white','stove','fridge','counter_white','table_wood','chair_dining','chair_dining','chair_dining','chair_dining','chair_dining','plant','bed_apt','nightstand','nightstand','wardrobe_honey','rug_stripe',
+ 'dresser','mirror_floor','lamp_floor','monstera','vanity','toilet','bathtub','washer','towel_rack'];
+const APT_V3_STUDY={Ares:['treadmill','bench_black','ball','kettlebell','plant'],Zayne:['desk_modern','arcade','speaker','shelf_low','beanbag'],Batzz:['speedbag','bench_black','armchair','dumbbells','plant'],Ophion:['desk_modern','caseboard','bookshelf','globe','cabinet_file']};
+const aptV3Def=n=>[...APT_V3_BASE,...(APT_V3_STUDY[n]||[])];
+const APT_DEF=[['shower_glass',24,12,0,1],['bed_apt',16,12],['sink',20,14,1],['fridge',20,0]];
 function aptRoom(n){const T=ROOMS_THEMED[n];
- return{type:'tile',style:'apt',name:n+"'s Apartment",cols:18,rows:15,TW,WH:150,LH:30,ch:122,z:0,
+ return{type:'tile',style:'apt',name:n+"'s Apartment",cols:26,rows:20,TW,WH:150,LH:30,ch:122,z:0,z0:.6,backU:4,backV:2,
  theme:{bg:'#efe7dc',wall:'#f39a22',trim:'#ffffff',lowWall:'#f08f1c',base:'#4b4a52'},
- zones:{B:{n:'Balcony',rs:[[0,0,3,8]],floor:'deck'},L:{n:'Living room',rs:[[3,0,7,6]],floor:'cream'},H:{n:'Hallway',rs:[[10,0,2,6],[3,6,15,2]],floor:'cream'},
-  K:{n:'Kitchen & dining',rs:[[12,0,6,6]],floor:'check'},S:{n:'Study',rs:[[3,8,5,6]],floor:'walnut'},R:{n:'Bedroom',rs:[[8,8,6,7]],floor:'wood'},W:{n:'Bathroom',rs:[[14,8,4,6]],floor:'blue'}},
- doors:[[2,2,3,2],[2,3,3,3],[9,2,10,2],[5,5,5,6],[6,5,6,6],[7,5,7,6],[11,3,12,3],[14,5,14,6],[15,5,15,6],[3,7,3,8],[9,7,9,8],[14,7,14,8]],
- // tall partitions: the balcony's glass sliding doors (u-line 3) and the tiled shower wall behind the walk-in shower (v-line 8)
- tallU:[{u:3,v0:0,v1:8,kind:'glass',doors:[2,3]}],tall:[{v:8,u0:16,u1:18,kind:'tile'}],
- entry:{t:[10,0],out:[0,-1],side:'R',img:'glass'},
- openView:{side:'L',line:0,v0:0,v1:8},ac:{side:'R',line:0,v0:5,v1:8},windows:[{side:'R',line:0,s0:16,s1:18},{side:'L',line:3,s0:10,s1:12}],drain:[14.6,11.6],
- themed:T,defFurn:[...APT_BASE,...(APT_STUDY[n]||[])].map(([k,u,v,r=0,fixed])=>fixed?{k,u,v,r,fixed:1}:{k,u,v,r})};}
+ zones:{B:{n:'Balcony',rs:[[0,0,4,10]],floor:'deck'},L:{n:'Living room',rs:[[4,0,10,9]],floor:'cream'},H:{n:'Hallway',rs:[[14,0,3,9],[4,9,22,3]],floor:'cream'},
+  K:{n:'Kitchen & dining',rs:[[17,0,9,9]],floor:'check'},S:{n:'Study',rs:[[4,12,7,8]],floor:'walnut'},R:{n:'Bedroom',rs:[[11,12,9,8]],floor:'wood'},W:{n:'Bathroom',rs:[[20,12,6,7]],floor:'blue'}},
+ doors:[[3,3,4,3],[3,4,4,4],[13,3,14,3],[7,8,7,9],[8,8,8,9],[9,8,9,9],[16,4,17,4],[20,8,20,9],[21,8,21,9],[6,11,6,12],[14,11,14,12],[21,11,21,12]],
+ // tall partitions: the balcony's glass sliding doors (u-line 4) and the tiled shower wall behind the walk-in shower (v-line 12)
+ tallU:[{u:4,v0:0,v1:10,kind:'glass',doors:[3,4]}],tall:[{v:12,u0:24,u1:26,kind:'tile'}],
+ entry:{t:[15,0],out:[0,-1],side:'R',img:'glass'},
+ openView:{side:'L',line:0,v0:0,v1:10},ac:{side:'R',line:0,v0:7,v1:10},windows:[{side:'R',line:0,s0:22,s1:24},{side:'L',line:4,s0:15,s1:17}],drain:[22.6,16.6],
+ themed:T,defFurn:APT_DEF.map(([k,u,v,r=0,fixed])=>fixed?{k,u,v,r,fixed:1}:{k,u,v,r})};}
 const ROOMS={};for(const n of ['Ares','Zayne','Batzz','Ophion'])ROOMS[n]=ROOM_STYLE=='themed'?ROOMS_THEMED[n]:aptRoom(n);
 for(const RR of [ROOMS,ROOMS_THEMED])for(const n in RR){const R=RR[n];if(R.type=='tile'){R.O=tileO(R.cols,R.rows,R.WH);[R.W,R.H]=tileWH(R.cols,R.rows,R.WH);}}
 
