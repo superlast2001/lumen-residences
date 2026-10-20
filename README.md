@@ -17,6 +17,14 @@ You start in the lobby. **FLOOR** opens the building-front floor picker, and the
 - Ophion's and Batzz's source CG panels crop their wings and tail at the edges.
 - There is no player avatar, to avoid inventing a character; a cursor is used instead. The ring is a canvas drawing.
 
+## v0.3.5
+- **Ophion's Dragon Suite is back**: luxury pieces are placed across his flat. Living: chesterfield, wingback, dragon rug, coffee table, chandelier, grand bookcase, screen, lanterns, bonsai. Hall: statue. Dining: bar, table and 4 chairs, chandelier. Study: grand piano, bookcase. Bedroom: dragon bed, wardrobe, vanity, rug, chandelier. Bath: clawfoot tub. His walk-in shower and its painted sequence still work. The other tenants keep the v0.3.4 starter set.
+- **The furniture shop is now the Food & Drink Shop**: 59 items in 7 tabs (Meals, Snacks, Desserts, Drinks, Coffee & Tea, Bubble Tea, Bar). The art is drawn in code in the same sticker style (`foodart.js`). Prices are in £. Bought food goes into the bag used by FEED. The Engagement ring is still sold under the Gifts tab.
+- **Favourites**: each tenant has new favourites, and every favourite gives +8 ♥.
+- **Lumen Food Hall** replaces the furniture showroom (same map slot, so schedules and saves still work).
+- **Profile story rows**: BATH, POOL and BEDROOM each have 5 chapters, unlocked by hearts. Each chapter shows as locked, NEW or watched. An unlocked chapter opens a "Story coming soon" panel. The data lives in `STORIES` in data.js (tenant → category → chapters `{id,title,need,scenes:[{img,lines:[{t,face}]}]}`). The old zone ratings are removed.
+- **Save migration (room v5)**: owned furniture is kept. Only Ophion's flat is re-laid; his extra pieces go to storage. Unknown bag items are dropped and story progress is added.
+
 ## v0.3.4 — big, mostly empty flat at the v0.3.2 scale
 - The default camera is back to v0.3.2's close-up scale (zoom 0.6: big tiles, big chibis). You pan around the flat with the D-pad or by dragging. The **−** button or a pinch zooms out to the whole flat, and **+** zooms back in (up to 1.5×).
 - The flat grew to **474 floor tiles** (26×20 grid; v0.3.2 had 179, v0.3.3 had 240). It has seven walled rooms joined by 12 doorways: Balcony 40 tiles · Living room 90 · Entrance hall & corridor 93 · Kitchen & dining 81 · Study 56 · Bedroom 72 · Bathroom 42 (with the walk-in glass shower).

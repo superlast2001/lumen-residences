@@ -2,7 +2,7 @@
 // Lumen Residences — game data. All character art is the user's own sheets, sliced (see assets/tools, assets/ares/*.py).
 const L=(t,e='smile')=>({t,e});
 const REL=['Stranger','Acquaintance','Friend','Close Friend','Crush','Dating','Engaged','Married'],REL_P=[0,8,24,50,85,130,190,260];
-const PLACE_N={home:'Home',gym:'Lumen Gym',cafe:'Cafe Lumière',restaurant:'Restaurant Rosso',park:'City Park',fshop:'Furniture Shop',club:'Night Club Neon',roof:'Roof Terrace'};
+const PLACE_N={home:'Home',gym:'Lumen Gym',cafe:'Cafe Lumière',restaurant:'Restaurant Rosso',park:'City Park',fshop:'Lumen Food Hall',club:'Night Club Neon',roof:'Roof Terrace'};
 
 // ---------------- TENANTS ----------------
 // sz: on-screen chibi height scale; walkFace: which way the sheet's walk frames face; thigh: fraction of the CG height at mid-thigh
@@ -131,6 +131,16 @@ Ophion:{dir:'ophion',cg:'cg_hd.webp',thigh:.61,walkN:8,walkFace:'right',color:'#
  fedLove:[L("Sushi. You've been investigating me, haven't you?",'smile')],fedOk:[L("Thank you. Most kind.",'smile')],fedHate:[L("Ah. Pizza. I'll... deduce a polite way to decline.",'sad')]},
 };
 const TENANT_ORDER=['Ares','Zayne','Batzz','Ophion'];
+// ---- v0.3.5 story chapters on the profile card: per tenant, per category, 5 chapters unlocked by hearts.
+// Scenes are work in progress: each chapter has scenes:[] for now; plug in {img:'assets/...png', lines:[{t:'...',face:'smile'}]} later.
+const STORY_CATS=['BATH','POOL','BEDROOM'];
+const STORY_NEED={BATH:[10,35,70,120,180],POOL:[20,50,100,150,220],BEDROOM:[30,85,130,190,260]};
+const STORY_TITLES={
+ Ares:{BATH:['Post-Workout Soak','Steam Room Pep Talk','The Bubble Bath Bet','Back Scrub Duty','Hot Spring Weekend'],POOL:['Swim Lesson','Lap Race','Cannonball Contest','Sunset Laps','Midnight Swim'],BEDROOM:['Lights-Out Stretch','Pillow Fort Coach','The Snore Report','Rainy Morning In','Forever Roommate']},
+ Zayne:{BATH:['Waterproof Mode','Steam & Static','Neon Bath Bombs','Visor Off?','Quiet Frequency'],POOL:['Synthwave Pool Party','Floating Playlist','Underwater Beat','Glow Stick Night','Afterparty Dip'],BEDROOM:['Low Battery','Bedside Remix','Sleep Mode','Dream Data','Signal Found']},
+ Batzz:{BATH:["The Emperor's Bath",'Too Hot? Never!','The Rubber Duck Treaty','Scale Polish','Royal Soak for Two'],POOL:['Dragon Dive','Cannonball of Thunder','Who Splashed Whom','Floaty Surrender','Moonlit Pool'],BEDROOM:['Throne Nap','Blanket Hoarder','Nightmare Guard','Secret Softie','Lord of My Heart']},
+ Ophion:{BATH:['Clues in the Steam','Shower Thoughts','The Case of the Missing Towel','Golden Scales','Confession in the Mist'],POOL:['Poolside Stakeout','Deep End Deduction','Night Swim Alibi','Floating Theory','Case Closed, Pool Open'],BEDROOM:['Late-Night Case Files','Nightcap in Roppongi','Insomnia Partner','Morning Light','The Last Mystery']}};
+const STORIES={};TENANT_ORDER.forEach(n=>{STORIES[n]={};STORY_CATS.forEach(c=>{STORIES[n][c]=STORY_TITLES[n][c].map((title,i)=>({id:c+(i+1),title,need:STORY_NEED[c][i],scenes:[]}));});});
 const FIND_COST=[0,30,60,90];
 
 // ---------------- ROOMS ----------------
@@ -187,7 +197,7 @@ Ophion:{type:'paint',img:'assets/ophion/room_hd.jpg',W:1536,H:1024,ch:112,name:'
 // Interior walls are cut-away so every room stays readable; tenants only cross between rooms through doorways.
 // The tenants' old themed rooms stay in ROOMS_THEMED: set ROOM_STYLE='themed' to switch back.
 const ROOM_STYLE='default';
-const APT_V=4,APT_V2_DEF=['bed_apt','sink','fridge'];
+const APT_V=5,APT_V2_DEF=['bed_apt','sink','fridge'];
 // v0.3.3 auto-placed starter sets: only used to tell starter pieces from purchases when migrating v0.3.3 saves
 const APT_V3_BASE=['sunbed','parasol','table_patio','chair_patio','chair_patio','lemon_tree','planter_box','tv_modern','shelf_low','plant_big','lamp_modern','rug_round','table_coffee','sofa_honey','armchair_teal','beanbag','table_side',
  'clock_tall','plant_palm','plant','counter_white','stove','fridge','counter_white','table_wood','chair_dining','chair_dining','chair_dining','chair_dining','chair_dining','plant','bed_apt','nightstand','nightstand','wardrobe_honey','rug_stripe',
@@ -195,6 +205,22 @@ const APT_V3_BASE=['sunbed','parasol','table_patio','chair_patio','chair_patio',
 const APT_V3_STUDY={Ares:['treadmill','bench_black','ball','kettlebell','plant'],Zayne:['desk_modern','arcade','speaker','shelf_low','beanbag'],Batzz:['speedbag','bench_black','armchair','dumbbells','plant'],Ophion:['desk_modern','caseboard','bookshelf','globe','cabinet_file']};
 const aptV3Def=n=>[...APT_V3_BASE,...(APT_V3_STUDY[n]||[])];
 const APT_DEF=[['shower_glass',24,12,0,1],['bed_apt',16,12],['sink',20,14,1],['fridge',20,0]];
+// v0.3.5: Ophion's flat comes furnished with the Dragon Suite (Luxury) pieces, spread over his rooms; his shower stays built in
+const APT_DEF_OPH=[['shower_glass',24,12,0,1],['sink',20,14,1],['fridge',20,0],
+ // living room: grand bookcase, folding screen, rug, chesterfield, wingback, low table, chandelier, statue, lanterns
+ ['lux_shelf',7,0],['lux_screen',10,0],['lux_rug',7,3],['lux_table',8,4],['lux_sofa',8,6,2],['lux_armchair',11,4,3],['lux_chandelier',8,4],['lux_lantern',5,0],['lux_lantern',13,0],['lux_bonsai',5,7],
+ // hall: dragon statue by the front door
+ ['lux_statue',16,1],
+ // kitchen & dining: bar, lacquer dining set
+ ['lux_bar',22,0],['lux_table',20,4],['lux_chair',20,3],['lux_chair',21,3],['lux_chair',20,5,2],['lux_chair',21,5,2],['lux_chandelier',20,4],
+ // study: grand piano, second bookcase, lantern
+ ['lux_piano',7,15],['lux_shelf',4,16,1],['lux_lantern',10,12],['lux_bonsai',4,19],
+ // bedroom: dragon bed, lanterns, rug, wardrobe, vanity
+ ['lux_bed',16,12],['lux_lantern',15,12],['lux_lantern',18,12],['lux_rug',15,15],['lux_wardrobe',11,15,1],['lux_vanity',19,17,3],['lux_chandelier',16,16],
+ // bathroom: gold claw-foot tub
+ ['lux_tub',22,16],
+ // balcony
+ ['lux_bonsai',0,0],['lux_lantern',0,9]];
 function aptRoom(n){const T=ROOMS_THEMED[n];
  return{type:'tile',style:'apt',name:n+"'s Apartment",cols:26,rows:20,TW,WH:150,LH:30,ch:122,z:0,z0:.6,backU:4,backV:2,
  theme:{bg:'#efe7dc',wall:'#f39a22',trim:'#ffffff',lowWall:'#f08f1c',base:'#4b4a52'},
@@ -205,7 +231,7 @@ function aptRoom(n){const T=ROOMS_THEMED[n];
  tallU:[{u:4,v0:0,v1:10,kind:'glass',doors:[3,4]}],tall:[{v:12,u0:24,u1:26,kind:'tile'}],
  entry:{t:[15,0],out:[0,-1],side:'R',img:'glass'},
  openView:{side:'L',line:0,v0:0,v1:10},ac:{side:'R',line:0,v0:7,v1:10},windows:[{side:'R',line:0,s0:22,s1:24},{side:'L',line:4,s0:15,s1:17}],drain:[22.6,16.6],
- themed:T,defFurn:APT_DEF.map(([k,u,v,r=0,fixed])=>fixed?{k,u,v,r,fixed:1}:{k,u,v,r})};}
+ themed:T,defFurn:(n=='Ophion'?APT_DEF_OPH:APT_DEF).map(([k,u,v,r=0,fixed])=>fixed?{k,u,v,r,fixed:1}:{k,u,v,r})};}
 const ROOMS={};for(const n of ['Ares','Zayne','Batzz','Ophion'])ROOMS[n]=ROOM_STYLE=='themed'?ROOMS_THEMED[n]:aptRoom(n);
 for(const RR of [ROOMS,ROOMS_THEMED])for(const n in RR){const R=RR[n];if(R.type=='tile'){R.O=tileO(R.cols,R.rows,R.WH);[R.W,R.H]=tileWH(R.cols,R.rows,R.WH);}}
 
@@ -248,9 +274,30 @@ ring:{n:'Engagement ring',cat:'Special',p:500,item:1},
 };
 const TIER=p=>p>=600?'Luxury':p>=120?'Premium':p>=40?'Standard':'Basic';
 const FURN_CATS=['Living','Bedroom','Kitchen','Bath','Study','Balcony','Decor','Gym','Luxury','Special'];
-const FOOD={noodles:{n:'Noodle bowl',p:6},hotpot:{n:'Hot pot',p:9},grill:{n:'Grill platter',p:12},paella:{n:'Paella',p:10},sushi:{n:'Sushi plates',p:11},steak:{n:'Steak box',p:14},
- wine:{n:'Red wine',p:9},water:{n:'Water bottle',p:1},jar:{n:'Pickle jar',p:3},sauce:{n:'Hot sauce',p:2},rice:{n:'Rice cooker',p:8},coffee:{n:'Coffee cup',p:2},whiskey:{n:'Whiskey',p:12},juice:{n:'Orange juice',p:3},pizza:{n:'Pizza box',p:9},bento:{n:'Bento box',p:7}};
-const SHOP_FOOD={cafe:['coffee','juice','water','bento','noodles','pizza'],restaurant:['steak','sushi','paella','grill','hotpot','rice','wine','whiskey'],club:['whiskey','wine','juice','water']};
+// v0.3.5: the food & drink menu (art painted in code by foodart.js). cat drives the shop tabs; old save keys are kept.
+const FOOD_CATS=['Meals','Snacks','Desserts','Drinks','Coffee & Tea','Bubble Tea','Bar'];
+const FOOD={
+ noodles:{n:'Ramen bowl',p:6,cat:'Meals'},hotpot:{n:'Hot pot',p:9,cat:'Meals'},grill:{n:'Grill platter',p:12,cat:'Meals'},paella:{n:'Paella',p:10,cat:'Meals'},sushi:{n:'Sushi set',p:11,cat:'Meals'},
+ steak:{n:'Steak plate',p:14,cat:'Meals'},bento:{n:'Bento box',p:7,cat:'Meals'},pizza:{n:'Pizza slice',p:4,cat:'Meals'},rice:{n:'Rice bowl',p:3,cat:'Meals'},curry:{n:'Curry rice',p:8,cat:'Meals'},
+ omurice:{n:'Omurice',p:8,cat:'Meals'},burger:{n:'Cheeseburger',p:7,cat:'Meals'},pasta:{n:'Tomato pasta',p:9,cat:'Meals'},dumplings:{n:'Steamed dumplings',p:6,cat:'Meals'},
+ onigiri:{n:'Onigiri',p:3,cat:'Snacks'},sandwich:{n:'Club sandwich',p:5,cat:'Snacks'},fries:{n:'Fries',p:3,cat:'Snacks'},croissant:{n:'Croissant',p:3,cat:'Snacks'},popcorn:{n:'Popcorn',p:3,cat:'Snacks'},
+ taiyaki:{n:'Taiyaki',p:4,cat:'Snacks'},jar:{n:'Pickle jar',p:3,cat:'Snacks'},sauce:{n:'Hot sauce',p:2,cat:'Snacks'},
+ cake:{n:'Strawberry shortcake',p:6,cat:'Desserts'},chococake:{n:'Chocolate cake',p:6,cat:'Desserts'},donut:{n:'Sprinkle donut',p:3,cat:'Desserts'},macarons:{n:'Macarons',p:7,cat:'Desserts'},
+ icecream:{n:'Ice cream cone',p:4,cat:'Desserts'},pudding:{n:'Custard pudding',p:4,cat:'Desserts'},cupcake:{n:'Cupcake',p:4,cat:'Desserts'},parfait:{n:'Strawberry parfait',p:7,cat:'Desserts'},
+ crepe:{n:'Strawberry crêpe',p:5,cat:'Desserts'},mochi:{n:'Mochi trio',p:5,cat:'Desserts'},chocobox:{n:'Chocolate box',p:12,cat:'Desserts'},
+ water:{n:'Water bottle',p:1,cat:'Drinks'},juice:{n:'Orange juice',p:3,cat:'Drinks'},applejuice:{n:'Apple juice',p:3,cat:'Drinks'},lemonade:{n:'Lemonade',p:3,cat:'Drinks'},
+ smoothie:{n:'Berry smoothie',p:5,cat:'Drinks'},soda:{n:'Cola',p:2,cat:'Drinks'},energy:{n:'Energy drink',p:3,cat:'Drinks'},milk:{n:'Milk carton',p:2,cat:'Drinks'},
+ coffee:{n:'Coffee cup',p:2,cat:'Coffee & Tea'},latte:{n:'Caffè latte',p:4,cat:'Coffee & Tea'},icecoffee:{n:'Iced coffee',p:4,cat:'Coffee & Tea'},matcha:{n:'Matcha latte',p:5,cat:'Coffee & Tea'},
+ greentea:{n:'Green tea',p:3,cat:'Coffee & Tea'},blacktea:{n:'Breakfast tea',p:3,cat:'Coffee & Tea'},hotchoc:{n:'Hot chocolate',p:4,cat:'Coffee & Tea'},
+ boba_milk:{n:'Classic milk tea',p:5,cat:'Bubble Tea'},boba_taro:{n:'Taro milk tea',p:6,cat:'Bubble Tea'},boba_matcha:{n:'Matcha boba',p:6,cat:'Bubble Tea'},boba_brown:{n:'Brown sugar boba',p:6,cat:'Bubble Tea'},
+ boba_mango:{n:'Mango popping boba',p:6,cat:'Bubble Tea'},boba_straw:{n:'Strawberry milk boba',p:6,cat:'Bubble Tea'},
+ wine:{n:'Red wine',p:9,cat:'Bar'},whiskey:{n:'Whiskey',p:12,cat:'Bar'},cocktail:{n:'Pink cocktail',p:10,cat:'Bar'},beer:{n:'Draught beer',p:5,cat:'Bar'},sake:{n:'Sake',p:8,cat:'Bar'}};
+const SHOP_FOOD={cafe:['coffee','latte','icecoffee','matcha','greentea','blacktea','hotchoc','boba_milk','boba_taro','boba_brown','croissant','sandwich','cake','cupcake','crepe','donut','juice','water'],
+ restaurant:['steak','sushi','paella','grill','hotpot','pasta','curry','omurice','dumplings','rice','pudding','wine','whiskey','sake'],
+ club:['whiskey','wine','cocktail','beer','sake','soda','energy','juice','water','popcorn','fries']};
+// favourite foods (give bonus hearts when fed). v0.3.5 only ADDS to each tenant's existing loves; nothing about them is changed.
+const FOOD_FAV_ADD={Ares:['smoothie','onigiri'],Zayne:['energy','boba_taro','icecoffee'],Batzz:['burger','chococake'],Ophion:['matcha','sake','macarons']};
+for(const n in FOOD_FAV_ADD){const T=TENANTS[n];T.foodLove=[...new Set([...T.foodLove,...FOOD_FAV_ADD[n]])];}
 
 // ---------------- PLACES (10x10 tile interiors; props are sheet sprites placed on tiles: unmirrored fronts face down-left, r:1 faces down-right) ----------------
 // entry: the exit door tile (left wall, tile 0,8). The lobby elevator is at the back-right wall tile (6,0).
@@ -275,9 +322,10 @@ restaurant:{n:'Restaurant Rosso',wall:['#7a1f2a','#661a24'],trim:'#e8c88a',tex:'
 park:{n:'City Park',outdoor:1,sign:'CITY PARK',entry:EXIT,
  props:[F('palm',0,0),F('statue_white',2,1),F('plant_big',9,0),F('bench_blue',3,6),F('bench_blue',6,7),F('roses',0,5,1),F('roses',9,5),F('lamp_warm',6,4),F('plant',0,7,1),F('palm',9,8)],
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'stroll',n:'Pond path',t:[5,3],kind:'stroll'}]},
-fshop:{n:'Furniture Shop',wall:['#f2efe8','#e4dfd4'],trim:'#c9a35a',tex:'t20',sign:'LUMEN FURNITURE',entry:EXIT,
- props:[F('armor',0,1,1),F('sofa_red',0,3,1),F('fridge2',2,0),F('bed',4,0),F('bookcase_red',7,0),F('tv',0,5,1),F('treadmill',6,5),F('sofa_cream',3,6),F('plant_big',9,0),F('desk',8,2)],
- hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'shop',n:'Shop counter',t:[4,4],kind:'shop'}]},
+fshop:{n:'Lumen Food Hall',wall:['#f6e6c8','#ead2aa'],trim:'#d8603a',tex:'t12',sign:'LUMEN FOOD HALL',entry:EXIT,
+ props:[F('counter_white',2,0),F('counter_white',4,0),F('fridge2',6,0),F('lamp_warm',8,0),F('island',2,2),F('plant_big',9,0),F('table_wood',5,5),F('chair_dining',5,4),F('chair_dining',6,4),F('chair_dining',5,6,2),F('chair_dining',6,6,2),
+  F('table_patio',8,7),F('chair_patio',8,6),F('vase_flowers',0,3,1),F('plant',0,6,1),F('monstera',9,9)],
+ hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'shop',n:'Food & drink counter',t:[3,4],kind:'shop'}]},
 club:{n:'Night Club Neon',wall:['#1c1630','#151026'],trim:'#c15aff',tex:'t32',sign:'CLUB NEON',neon:1,entry:EXIT,dance:[3,3,5,5],
  props:[F('djbooth',2,1),F('speaker',1,1),F('speaker',6,1),F('counter',8,0),F('barstool',8,1),F('barstool',9,1),F('sofa_black',0,3,1),F('table_coffee',1,3,1),F('armchair',0,6,1),F('plant_palm',9,2),F('speaker',9,6,1)],
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'dance',n:'Dance floor',t:[5,5],kind:'dance'},{id:'counter',n:'Bar',t:[8,2],kind:'food'}]},
@@ -287,4 +335,4 @@ roof:{n:'Roof Terrace',outdoor:1,roof:1,sign:'ROOF TERRACE',entry:EXIT,
  hot:[{id:'exit',n:'Stairs down',kind:'exit'},{id:'stroll',n:'Skyline view',t:[6,2],kind:'stroll'}]},
 };
 const TRAVEL=['gym','cafe','restaurant','park','fshop','club','roof'];
-const PLACE_DESC={gym:'Train with tenants · Ares coaches here',cafe:'Coffee, bento & snacks',restaurant:'Steak, sushi & dinner',park:'Fresh air & stakeouts',fshop:'Buy furniture for the rooms',club:'Zayne DJs 9 PM – 3 AM',roof:'Building common area · sunbeds, BBQ & skyline'};
+const PLACE_DESC={gym:'Train with tenants · Ares coaches here',cafe:'Coffee, bento & snacks',restaurant:'Steak, sushi & dinner',park:'Fresh air & stakeouts',fshop:'Meals, desserts, bubble tea & more',club:'Zayne DJs 9 PM – 3 AM',roof:'Building common area · sunbeds, BBQ & skyline'};

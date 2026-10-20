@@ -1,7 +1,7 @@
 'use strict';
 // Lumen Residences — engine. Kairosoft-style portrait layout (game view on top, D-pad panel below),
 // Ero-Condo-style tenant loop. Dialogue system, dev panel, save and sfx follow Fantasy Town v0.0.2.3.
-const VERSION='v0.3.4',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
+const VERSION='v0.3.5',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 const DPR=()=>Math.min(3,window.devicePixelRatio||1);
@@ -17,7 +17,7 @@ const tImg=(n,f)=>img(`assets/${TENANTS[n].dir}/${f}`);
 const EXPR={normal:'normal',smile:'smile',laugh:'smile',happy:'smile',teasing:'teasing',smirk:'teasing',blush:'blushing',blushing:'blushing',angry:'angry',serious:'serious',thinking:'serious',surprised:'surprised',sad:'sad'};
 const faceImg=(n,e='smile')=>tImg(n,`expr_${EXPR[e]||'smile'}_hd.png`);
 const furnThumb=k=>FA.thumb(k);
-const foodImg=k=>img(`assets/furn/food_${k}_hd.png`);
+const foodImg=k=>FOODART.has(k)?FOODART.img(k):img(`assets/furn/food_${k}_hd.png`);
 // preload what every screen needs
 for(const n of TENANT_ORDER){const T=TENANTS[n];['front','right','back','left'].forEach(d=>tImg(n,`chibi_${d}_hd.png`));for(let i=0;i<T.walkN;i++)tImg(n,`walk_${i}_hd.png`);
  ['idle','smile','blush','angry','surprised','happy','sit'].forEach(e=>tImg(n,`emote_${e}_hd.png`));if(T.sitns)tImg(n,'emote_sitns_hd.png');Object.values(T.icons).forEach(f=>tImg(n,f+'_hd.png'));faceImg(n,'normal');if(T.poses)Object.values(T.poses).forEach(f=>tImg(n,f));}
@@ -25,16 +25,16 @@ if(TENANTS.Ophion)[...OPH_SHOWER,...OPH_AFTER].forEach(f=>tImg('Ophion','shower_
 
 // ---------------- state ----------------
 let S;
-function newState(){const s={v:2,roomV:ROOM_STYLE=='themed'?1:APT_V,day:1,min:8*60,money:200,hearts:30,unlocked:['Ares'],scene:'lobby',rel:{},rooms:{},inv:{},bag:{water:2,coffee:1},ring:0,seenHelp:0};
+function newState(){const s={v:2,roomV:ROOM_STYLE=='themed'?1:APT_V,day:1,min:8*60,money:200,hearts:30,unlocked:['Ares'],scene:'lobby',rel:{},rooms:{},inv:{},bag:{water:2,coffee:1},ring:0,seenHelp:0,story:{}};
  TENANT_ORDER.forEach(n=>{s.rel[n]={p:0,talk:0,fed:0,used:{},day:0,dating:0,engaged:0,married:0,engDay:0};s.rooms[n]={furn:(ROOMS[n].defFurn||[]).map(f=>({r:0,...f})),fridge:n=='Ares'?{steak:1,water:2}:{water:1}};});return s;}
-function load(key=SAVE){try{const j=JSON.parse(localStorage.getItem(key));if(j&&j.v==2){migrateRooms(j);return j;}}catch(e){}return null;}
+function load(key=SAVE){try{const j=JSON.parse(localStorage.getItem(key));if(j&&j.v==2){migrateRooms(j);j.story=j.story||{};j.bag=j.bag||{};for(const k in j.bag)if(!FOOD[k])delete j.bag[k];return j;}}catch(e){}return null;}
 // v0.3.2: every apartment moved to the new default shell. Old placements no longer fit its walls, so placed pieces go back to
 // storage (nothing is lost) and each room starts from the default bed + built-in shower + basics.
 // switching room style (or growing the default flat) hands every tenant the new furnished layout. Everything the player had bought
 // and placed goes back into storage (inventory); only the old built-in defaults are dropped, so nothing bought is ever lost.
-function migrateRooms(j){const want=ROOM_STYLE=='themed'?1:APT_V,had=j.roomV||1;if(had==want)return;j.inv=j.inv||{};for(const n of TENANT_ORDER){const r=j.rooms[n];if(!r)continue;
+function migrateRooms(j){const want=ROOM_STYLE=='themed'?1:APT_V,had=j.roomV||1;if(had==want)return;j.inv=j.inv||{};for(const n of TENANT_ORDER){const r=j.rooms[n];if(!r)continue;if(had==4&&want==5&&n!='Ophion')continue;
  const back={};(r.furn||[]).forEach(f=>{if(FURN[f.k]&&!FURN[f.k].fixed&&!f.fixed)back[f.k]=(back[f.k]||0)+1;});
- const oldDef=had==1?((ROOMS_THEMED[n]||{}).defFurn||[]).map(f=>f.k):had==2?APT_V2_DEF:had==3?aptV3Def(n):[];oldDef.forEach(k=>{if(back[k]>0)back[k]--;});
+ const oldDef=had==1?((ROOMS_THEMED[n]||{}).defFurn||[]).map(f=>f.k):had==2?APT_V2_DEF:had==3?aptV3Def(n):had==4?APT_V2_DEF:[];oldDef.forEach(k=>{if(back[k]>0)back[k]--;});
  for(const k in back)if(back[k]>0)j.inv[k]=(j.inv[k]||0)+back[k];r.furn=(ROOMS[n].defFurn||[]).map(f=>({r:0,...f}));}j.roomV=want;}
 function save(quiet,key=SAVE){try{localStorage.setItem(key,JSON.stringify(S));if(!quiet)toast('Game saved');}catch(e){}}
 S=load()||newState();
@@ -185,8 +185,6 @@ function hotPos(h){const P=SC.P,G=SC.G;if(h.kind=='exit')return G.tc(...P.entry.
 let hover=null,sel=null,decor=null;
 const furnAct=k=>(FURN[k]&&FURN[k].act)||(FDEF[k]&&FDEF[k].use&&FDEF[k].use.act)||null;
 const furnName=k=>(FURN[k]&&FURN[k].n)||{djbooth:'DJ booth',speaker:'Speaker stack',barstool:'Bar stool'}[k]||k;
-function zoneLv(n,zid){const Z=TENANTS[n].zones.find(z=>z.id==zid),Rm=ROOMS[n];let lv=1;(Rm.spots||[]).forEach(s=>{if(Z.acts.includes(s.act))lv++;});
- S.rooms[n].furn.forEach(f=>{const a=furnAct(f.k);if(a&&Z.acts.includes(a))lv++;});return Math.min(5,lv);}
 function furnTop(f){const b=fBase(SC.G,f),d=FDEF[f.k]||{},h=(d.h||60)*SC.G.eu[0]/45;return[b.cx,b.by-b.w*.25-h*.5];}
 function targets(){const L=[],G=SC.G;for(const n in TN){const t=TN[n];if(t.alpha<.5)continue;L.push({type:'tenant',n,x:t.x,y:t.y-SC.ch*.45,label:n});}
  if(SC.kind=='room'){const n=SC.n,Rm=SC.R;
@@ -255,8 +253,7 @@ function updateInfo(){const ic=$('infoIc'),it=$('infoT');let html,icon=null;
  if(floorsOpen()){const u=floorSel();html=u.t?(S.unlocked.includes(u.t)?`<b>${u.t}</b> · ${REL[relLv(u.t)]} · ${placeOf(u.t)=='home'?'At home':'Out: '+PLACE_N[placeOf(u.t)]}<br>OK to visit the room`:`<b>???</b> · Locked resident. Tap FIND NEW RESIDENT (♥ ${FIND_COST[S.unlocked.length]||'—'})`):u.lobby?'<b>1F Lobby</b> · OK to go down to the lobby':'<b>Vacant unit</b> · Coming soon';if(u.t&&S.unlocked.includes(u.t))icon=faceImg(u.t,'normal').src;}
  else if(decor){const f=decorF();html=`<b>Placing: ${furnName(decor.k)}</b> · ${canPlace(SC.G,f,decor.from)?'<span style="color:#1a8a3a">fits here</span>':'<span style="color:#c8323c">blocked</span>'}<br>D-pad move · ROTATE · PLACE · FLOOR = cancel`;}
  else if(hover){const h=hover;if(h.type=='tenant'){const r=R(h.n);html=`<b>${h.n}</b> · ${REL[relLv(h.n)]} ♥ ${r.p}${nextP(h.n)?'/'+nextP(h.n):''}<br>OK profile · TALK · FEED`;icon=faceImg(h.n,'normal').src;}
-  else if(h.type=='zone'){const n=SC.n;html=`<b>${h.z}</b> zone ${'★'.repeat(zoneLv(n,h.z))}${'☆'.repeat(5-zoneLv(n,h.z))}<br>${TENANTS[n].zones.find(z=>z.id==h.z).desc}. Add matching furniture to level up.`;}
-  else if(h.type=='hot')html=`<b>${h.label}</b><br>OK to ${{door:'ride the elevator',exit:'go out (teleport)',desk:'open reception',food:'order food',shop:'browse furniture',train:'train',dance:'dance',stroll:'take a stroll'}[h.h.kind]}`;
+  else if(h.type=='hot')html=`<b>${h.label}</b><br>OK to ${{door:'ride the elevator',exit:'go out (teleport)',desk:'open reception',food:'order food',shop:'buy food & drinks',train:'train',dance:'dance',stroll:'take a stroll'}[h.h.kind]}`;
   else if(h.type=='npc')html=`<b>${h.label}</b> · regular here<br>OK to say hi`;
   else html=`<b>${h.label}</b>${h.act?`<br>OK: ${h.act=='fridge'?'open the fridge':'use it'+(SC.kind=='room'?` with ${SC.n}`:'')}`:''}${h.type=='furn'?' · MENU→Decorate to move':''}`;}
  else if(SC.kind=='room'){const n=SC.n;html=TN[n]?`<b>${n}</b> is home. Move the cursor onto furniture or ${n} and press OK.`:`<b>${n}</b> is out at ${PLACE_N[placeOf(n)]} until ${fmtH(untilOf(n))}.`;icon=faceImg(n,'normal').src;}
@@ -333,7 +330,7 @@ function hotAct(h){const pr=Object.keys(TN).filter(n=>!TN[n].leaving);
  after();}
 // ---------------- interactions ----------------
 function actOn(t){if(!t){toast('Move the cursor onto a resident, furniture or a door, then press OK');return;}
- if(t.type=='tenant'){sel=t.n;openProfile(t.n);}else if(t.type=='zone')zoneInfo(SC.n,t.z);else if(t.type=='hot')hotAct(t.h);else useThing(t);}
+ if(t.type=='tenant'){sel=t.n;openProfile(t.n);}else if(t.type=='hot')hotAct(t.h);else useThing(t);}
 const ACT_LINES={shower:'bath',wash:'bath',dj:'read',fridge:'cook',coach:'lift'};
 function useThing(t){if(t.type=='npc'){const e=t.e;sfx(700);toast(`${e.c.n}: "${(e.s&&e.s.say)||e.c.talk||'Hey!'}"`);return;}
  if(t.act=='fridge'&&SC.kind=='room')return openFridge(SC.n);if(!t.act){toast(`${t.label} · decoration`);return;}
@@ -353,16 +350,16 @@ function talk(n){if(!n||!TN[n])return;const r=R(n),T=TENANTS[n],lv=relLv(n),t=TN
  sfx(760);startDialogue(n,lines,()=>{done();if(r.talk<3){r.talk++;gain(n,3,'chat');}else toast(`${n}: "We've talked plenty today!"`);save(1);});}
 function foodList(src){return Object.entries(src).filter(([k,v])=>v>0);}
 function openFeed(n){if(!n)return;const inRoom=SC.kind=='room'&&SC.n==n,fr=S.rooms[n].fridge,r=R(n);
- const cell=(k,v,from)=>`<button class="fcell" onclick="feed('${n}','${k}','${from}')"><img src="${foodImg(k).src}"><span>${FOOD[k].n}</span><i>${v}</i></button>`;
- openSheet(`<h3>FEED ${n.toUpperCase()}</h3><p>${r.fed>=3?`${n} is full for today.`:`Feed up to 3 times a day. Favourite foods give the most ♥.`}</p>`+
-  (inRoom?`<div class="fr"><div><h4>${n.toUpperCase()}'S FRIDGE</h4>${foodList(fr).map(([k,v])=>cell(k,v,'fridge')).join('')||'<p>Empty</p>'}</div><div><h4>YOUR BAG</h4>${foodList(S.bag).map(([k,v])=>cell(k,v,'bag')).join('')||'<p>Empty — buy food at the Cafe or Restaurant</p>'}</div></div>`
-  :`<h4 style="margin:4px 0">YOUR BAG</h4>${foodList(S.bag).map(([k,v])=>cell(k,v,'bag')).join('')||'<p>Your bag is empty — buy food at the Cafe or Restaurant counter.</p>'}`));}
+ const T0=TENANTS[n],cell=(k,v,from)=>`<button class="fcell${T0.foodLove.includes(k)?' fav':''}" onclick="feed('${n}','${k}','${from}')"><img src="${foodImg(k).src}"><span>${FOOD[k].n}${T0.foodLove.includes(k)?' <b class="favb">♥ fav</b>':''}</span><i>${v}</i></button>`;
+ openSheet(`<h3>FEED ${n.toUpperCase()}</h3><p>${r.fed>=3?`${n} is full for today.`:`Feed up to 3 times a day. Items marked ♥ fav are ${n}'s favourites: +${FAV_HEARTS} ♥ instead of +3.`}</p>`+
+  (inRoom?`<div class="fr"><div><h4>${n.toUpperCase()}'S FRIDGE</h4>${foodList(fr).map(([k,v])=>cell(k,v,'fridge')).join('')||'<p>Empty</p>'}</div><div><h4>YOUR BAG</h4>${foodList(S.bag).map(([k,v])=>cell(k,v,'bag')).join('')||'<p>Empty — buy food in MENU → Shop</p>'}</div></div>`
+  :`<h4 style="margin:4px 0">YOUR BAG</h4>${foodList(S.bag).map(([k,v])=>cell(k,v,'bag')).join('')||'<p>Your bag is empty — buy food in MENU → Shop (or the Food Hall, Cafe and Restaurant).</p>'}`));}
 function feed(n,k,from){const r=R(n),T=TENANTS[n],src=from=='fridge'?S.rooms[n].fridge:S.bag;if(r.fed>=3){toast(`${n} is full for today`);return;}if(!src[k])return;src[k]--;r.fed++;closeSheet();
  const love=T.foodLove.includes(k),hate=T.foodHate.includes(k),t=TN[n];if(t){halt(t);t.act='feed';t.hold=1;}sfx(880);const q=needs(n);q.food=Math.min(100,q.food+40);
- startDialogue(n,[L(`(You hand ${n} the ${FOOD[k].n.toLowerCase()}.)`,'normal'),...(love?T.fedLove:hate?T.fedHate:T.fedOk)],()=>{if(TN[n]){TN[n].act=null;TN[n].hold=0;}gain(n,love?6:hate?-1:3,FOOD[k].n);emote(n,love?'happy':hate?'angry':'happy');save(1);});}
+ startDialogue(n,[L(`(You hand ${n} the ${FOOD[k].n.toLowerCase()}.)`,'normal'),...(love?T.fedLove:hate?T.fedHate:T.fedOk)],()=>{if(TN[n]){TN[n].act=null;TN[n].hold=0;}gain(n,love?FAV_HEARTS:hate?-1:3,FOOD[k].n);if(love)toast(`${n} loves the ${FOOD[k].n.toLowerCase()}! +${FAV_HEARTS} ♥`);emote(n,love?'happy':hate?'angry':'happy');save(1);});}
 function openFridge(n,flash){const fr=S.rooms[n].fridge;const cell=(k,v,act)=>`<button class="fcell" onclick="fridgeMove('${n}','${k}','${act}')"><img src="${foodImg(k).src}"><span>${FOOD[k].n}</span><i>${v}</i><b>${act=='take'?'TAKE →':'← PUT'}</b></button>`;
  openSheet(`<h3>${n.toUpperCase()}'S FRIDGE</h3><p>Stock the fridge so you can FEED ${n} at home. Tap an item to move it.</p><div class="fridgeview"><div class="fr"><div><h4>IN THE FRIDGE</h4>${foodList(fr).map(([k,v])=>cell(k,v,'take')).join('')||'<p style="text-align:center">Empty</p>'}</div><div><h4>YOUR BAG</h4>${foodList(S.bag).map(([k,v])=>cell(k,v,'put')).join('')||'<p style="text-align:center">Empty</p>'}</div></div></div>`+
-  (TN[n]?`<button class="mbtn pink" onclick="openFeed('${n}')">FEED ${n.toUpperCase()} NOW</button>`:'')+`<p style="font-size:11px">Food is sold at Cafe Lumière, Restaurant Rosso and the Night Club bar (teleport via the lobby door).</p>`);}
+  (TN[n]?`<button class="mbtn pink" onclick="openFeed('${n}')">FEED ${n.toUpperCase()} NOW</button>`:'')+`<p style="font-size:11px">Food and drinks are sold in MENU → Shop, the Lumen Food Hall, Cafe Lumière, Restaurant Rosso and the club bar.</p>`);}
 function fridgeMove(n,k,a){const fr=S.rooms[n].fridge;if(a=='take'){if(!fr[k])return;fr[k]--;S.bag[k]=(S.bag[k]||0)+1;}else{if(!S.bag[k])return;S.bag[k]--;fr[k]=(fr[k]||0)+1;}sfx(600);save(1);openFridge(n);}
 function openProfile(n){const T=TENANTS[n],r=R(n),lv=relLv(n),np=nextP(n),p0=REL_P[lv],pc=np?Math.round((r.p-p0)/(np-p0)*100):100,where=placeOf(n);
  let cb;if(r.married)cb=`<button class="conf" disabled>MARRIED ♥</button>`;else if(r.engaged)cb=`<button class="conf" disabled>ENGAGED · TALK TOMORROW</button>`;
@@ -370,33 +367,39 @@ function openProfile(n){const T=TENANTS[n],r=R(n),lv=relLv(n),np=nextP(n),p0=REL
  else cb=r.p>=REL_P[4]?`<button class="conf ready" onclick="confess('${n}')">CONFESSION</button>`:`<button class="conf" disabled>CONFESSION · at ♥${REL_P[4]}</button>`;
  openSheet(`<div class="pcard"><div class="ptop"><div class="pface" style="background-image:url(${faceImg(n,'normal').src})"></div><div style="flex:1;min-width:0"><div class="pname">${n.toUpperCase()}</div><div class="ptitle">${T.title}</div>
  <div style="font-size:12px;font-weight:900;margin:6px 0 3px">${REL[lv]} · ♥ ${r.p}${np?' / '+np:''}</div><div class="hbar"><i style="width:${pc}%"></i></div><div style="font-size:11px;font-weight:800;margin-top:5px">${where=='home'?'At home now':'Out: '+PLACE_N[where]+' until '+fmtH(untilOf(n))}</div></div><img class="pchibi" src="${tImg(n,'chibi_front_hd.png').src}"></div>
- <div class="pbio">${T.bio}</div>`+T.zones.map(z=>{const zl=zoneLv(n,z.id);return`<div class="zrow"><b>${z.id}</b>${[1,2,3,4,5].map(i=>`<button class="${i<=zl?'on':''}${i==zl?' cur':''}" ${i<=zl?`onclick="zoneScene('${n}','${z.id}',${i})"`:'disabled'}>${i}</button>`).join('')}</div>`;}).join('')+
+ <div class="pbio">${T.bio}</div>`+storyRows(n)+
  `<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:8px">${cb}<small style="font-size:10px;color:#5a6a8a;font-weight:700">Talk ${r.talk}/3 · Fed ${r.fed}/3 today</small></div></div>
  <div class="grid2"><button class="mbtn talk" style="background:linear-gradient(#8ee05a,#3fa628);color:#fff" onclick="closeSheet();talk('${n}')" ${TN[n]?'':'disabled'}>TALK</button><button class="mbtn pink" onclick="openFeed('${n}')" ${TN[n]?'':'disabled'}>FEED</button></div>
  ${SC.kind=='room'&&SC.n==n?'':`<button class="mbtn blue" onclick="enterScene('room:${n}')">Visit ${n}'s room</button>`}<p style="font-size:11px">Schedule: ${T.sched.map(([h,p])=>fmtH(h)+' '+PLACE_N[p]).join(' → ')}</p>`);}
-function zoneScene(n,z,i){closeSheet();startDialogue(n,[L(TENANTS[n].zoneL[z][i-1],i>=4?'smile':i<=1?'teasing':'normal')]);}
 function confess(n){closeSheet();const r=R(n);startDialogue(n,TENANTS[n].confess,()=>{r.dating=1;r.p=Math.max(r.p,REL_P[5]);toast(`You and ${n} are now dating!`);emote(n,'happy');sfx(1320);save(1);updateHud();});}
 function propose(n){closeSheet();const r=R(n);S.ring--;startDialogue(n,TENANTS[n].propose,()=>{r.engaged=1;r.engDay=S.day;r.p=Math.max(r.p,REL_P[6]);toast(`Engaged to ${n}! Talk to ${n} tomorrow for the wedding.`);emote(n,'happy');save(1);});}
-function zoneInfo(n,z){const Z=TENANTS[n].zones.find(q=>q.id==z),lv=zoneLv(n,z),items=Object.keys(FURN).filter(k=>FURN[k].act&&Z.acts.includes(FURN[k].act));
- openSheet(`<h3>${z} ZONE · ${'★'.repeat(lv)}${'☆'.repeat(5-lv)}</h3><p>${Z.desc}. Each matching item placed in ${n}'s room adds a star (max 5). Higher zones unlock more of ${n}'s zone scenes on the profile card.</p><p><i>"${TENANTS[n].zoneL[z][lv-1]}"</i></p><div class="grid3">`+
-  items.map(k=>`<button class="item" onclick="buy('${k}',1)"><span class="own">${S.inv[k]||0}</span><img src="${furnThumb(k)}"><span>${FURN[k].n}</span><span class="pr">${money(FURN[k].p)}</span></button>`).join('')+`</div><button class="mbtn blue" onclick="decorMenu()">Decorate this room</button>`);}
+// ---- v0.3.5 story chapters (BATH / POOL / BEDROOM): unlocked by hearts, replayable; content is still work in progress
+function storySeen(n,id){return !!((S.story||{})[n]||{})[id];}
+function storyRows(n){const p=R(n).p;return STORY_CATS.map(cat=>`<div class="zrow srow"><b>${cat}</b>${STORIES[n][cat].map((ch,i)=>{const open=p>=ch.need,seen=storySeen(n,ch.id),st=!open?'lock':seen?'seen':'new';
+ return`<button class="st-${st}" onclick="openStory('${n}','${cat}',${i})" title="${open?ch.title:'Unlocks at ♥'+ch.need}">${open?(i+1):'🔒'}<small>${!open?'♥'+ch.need:seen?'✓':'NEW'}</small></button>`;}).join('')}</div>`).join('')+`<div class="slegend">🔒 locked · <span>NEW</span> unlocked · ✓ watched — tap an unlocked chapter to replay it</div>`;}
+function openStory(n,cat,i){const ch=STORIES[n][cat][i],p=R(n).p;if(p<ch.need){toast(`${cat} ${i+1} unlocks at ♥ ${ch.need} (you have ♥ ${p})`);sfx(180);return;}
+ S.story=S.story||{};(S.story[n]=S.story[n]||{})[ch.id]=1;save(1);if(ch.scenes&&ch.scenes.length)return storyPlay(n,cat,i,0);
+ openSheet(`<div class="soon"><div class="soonhd">${cat} · CHAPTER ${i+1}</div><div class="soonface" style="background-image:url(${faceImg(n,'smile').src})"></div><h3>${ch.title}</h3><p class="soonmsg">Story coming soon</p><p>This chapter with ${n} is still being written. It unlocked at ♥ ${ch.need}, and it will appear here to replay when it's ready.</p><button class="mbtn gold" onclick="openProfile('${n}')">Back to ${n}'s profile</button></div>`);}
+// replay viewer for when scenes are plugged in: one image per scene, its lines shown in order
+function storyPlay(n,cat,i,s,l=0){const ch=STORIES[n][cat][i],sc=ch.scenes[s];if(!sc){openProfile(n);return;}const ln=(sc.lines||[])[l]||{t:''},more=l+1<(sc.lines||[]).length,next=more?`storyPlay('${n}','${cat}',${i},${s},${l+1})`:`storyPlay('${n}','${cat}',${i},${s+1})`;
+ openSheet(`<div class="soon"><div class="soonhd">${cat} · ${ch.title} · ${s+1}/${ch.scenes.length}</div>${sc.img?`<img src="${sc.img}" style="width:100%;border-radius:10px">`:''}<p>${ln.t}</p><button class="mbtn gold" onclick="${next}">Next ▶</button><button class="mbtn" onclick="openProfile('${n}')">Close</button></div>`);}
 function reception(){const left=TENANT_ORDER.length-S.unlocked.length;openSheet(`<h3>RECEPTION</h3><p>Residents pay <b>£20 a day</b> each, collected every morning at 6 AM.</p>
  <button class="mbtn gold" onclick="closeSheet();findResident()" ${left?'':'disabled'}>FIND NEW RESIDENT<small>${left?`Costs ♥ ${FIND_COST[S.unlocked.length]} · you have ♥ ${S.hearts}`:'All four units are occupied'}</small></button>
  <button class="mbtn" onclick="residents()">Resident list<small>profiles, schedules, hearts</small></button><button class="mbtn" onclick="openFloors();closeSheet()">Elevator · floor picker</button>`);}
 function foodShop(p){const list=SHOP_FOOD[p]||SHOP_FOOD.cafe;openSheet(`<h3>${PLACES[p].n.toUpperCase()} · MENU</h3><p>Food goes into your bag. Put it in a resident's fridge or FEED it directly. You have ${money(S.money)}.</p><div class="grid3">`+
- list.map(k=>`<button class="item" onclick="buyFood('${k}','${p}')"><span class="own">${S.bag[k]||0}</span><img src="${foodImg(k).src}"><span>${FOOD[k].n}</span><span class="pr">${money(FOOD[k].p)}</span></button>`).join('')+`</div>`);}
-function buyFood(k,p){if(S.money<FOOD[k].p){toast('Not enough money');sfx(180);return;}S.money-=FOOD[k].p;S.bag[k]=(S.bag[k]||0)+1;sfx(900);toast(`Bought ${FOOD[k].n}`);save(1);foodShop(p);updateHud();}
-let shopCat='Gym';
-function openShop(cat){if(cat)shopCat=cat;const ks=Object.keys(FURN).filter(k=>FURN[k].cat==shopCat&&!FURN[k].noshop).sort((a,b)=>FURN[a].p-FURN[b].p);const lux=shopCat=='Luxury';
- openSheet(`<h3>FURNITURE SHOP</h3><p>Paid from rent money · you have <b>${money(S.money)}</b>. Bought items go to storage; place them with MENU → Decorate.</p><div class="tabs">${FURN_CATS.map(c=>`<button class="tab${c==shopCat?' on':''}${c=='Luxury'?' lux':''}" onclick="openShop('${c}')">${c=='Luxury'?'✦ ':''}${c}</button>`).join('')}</div>${lux?`<div class="luxban"><b>✦ THE DRAGON SUITE COLLECTION ✦</b>Black lacquer, gold leaf and crimson velvet, inspired by Ophion's old themed room. Hand-painted, one of a kind, priced to match.</div>`:''}<div class="grid3">`+
- ks.map(k=>{const F=FURN[k],own=k=='ring'?S.ring:(S.inv[k]||0);const tr=F.lux?"Luxury":TIER(F.p);return`<button class="item${F.lux?' luxi':''}" onclick="buy('${k}')"><span class="own">${own}</span><span class="tier t${tr[0]}">${tr}</span><img src="${k=='ring'?RING:furnThumb(k)}"><span>${F.n}</span><span class="pr">${money(F.p)}</span>${F.act?`<small style="font-size:9px;color:#6a5a72">use: ${F.act}</small>`:''}</button>`;}).join('')+`</div>`);}
-function buy(k,fromZone){const F=FURN[k];if(S.money<F.p){toast(`Not enough money (${money(F.p)})`);sfx(180);return;}S.money-=F.p;if(k=='ring')S.ring++;else S.inv[k]=(S.inv[k]||0)+1;sfx(900);save(1);updateHud();
- if(k!='ring'&&SC.kind=='room'){openSheet(`<h3>BOUGHT: ${F.n.toUpperCase()}</h3><div style="text-align:center"><img src="${furnThumb(k)}" style="max-height:120px"></div><button class="mbtn gold" onclick="startDecor('${k}')">Place it in ${SC.n}'s room now</button><button class="mbtn" onclick="openShop()">Keep shopping</button>`);}
- else{toast(`Bought ${F.n}`);if(fromZone)zoneInfo(SC.n,fromZone);else openShop();}}
+ list.filter(k=>FOOD[k]).map(k=>`<button class="item" onclick="buyFood('${k}','${p}')"><span class="own">${S.bag[k]||0}</span><img src="${foodImg(k).src}"><span>${FOOD[k].n}</span><span class="pr">${money(FOOD[k].p)}</span></button>`).join('')+`</div>`);}
+function buyFood(k,p){if(S.money<FOOD[k].p){toast('Not enough money');sfx(180);return;}S.money-=FOOD[k].p;S.bag[k]=(S.bag[k]||0)+1;sfx(900);toast(`Bought ${FOOD[k].n}`);save(1);if(p)foodShop(p);else openShop();updateHud();}
+let shopCat='Meals';const FAV_HEARTS=8;
+function favOf(k){return S.unlocked.filter(n=>TENANTS[n].foodLove.includes(k));}
+function openShop(cat){if(cat)shopCat=cat;if(!FOOD_CATS.includes(shopCat)&&shopCat!='Gifts')shopCat='Meals';const ks=shopCat=='Gifts'?[]:Object.keys(FOOD).filter(k=>FOOD[k].cat==shopCat).sort((a,b)=>FOOD[a].p-FOOD[b].p);
+ openSheet(`<h3>FOOD & DRINK SHOP</h3><p>You have <b>${money(S.money)}</b>. Food goes into your bag: FEED it to a resident or stock their fridge. <b class="favb">♥</b> marks a resident's favourite (+${FAV_HEARTS} ♥).</p><div class="tabs">${[...FOOD_CATS,'Gifts'].map(c=>`<button class="tab${c==shopCat?' on':''}" onclick="openShop('${c}')">${c}</button>`).join('')}</div><div class="grid3">`+
+ (shopCat=='Gifts'?`<button class="item" onclick="buy('ring')"><span class="own">${S.ring}</span><img src="${RING}"><span>${FURN.ring.n}</span><span class="pr">${money(FURN.ring.p)}</span><small style="font-size:9px;color:#6a5a72">to PROPOSE</small></button>`:
+ ks.map(k=>{const F=FOOD[k],fv=favOf(k);return`<button class="item" onclick="buyFood('${k}')"><span class="own">${S.bag[k]||0}</span><img src="${foodImg(k).src}"><span>${F.n}</span><span class="pr">${money(F.p)}</span>${fv.length?`<small class="favs">♥ ${fv.join(', ')}</small>`:''}</button>`;}).join(''))+`</div>`);}
+function buy(k){const F=FURN[k];if(!F)return;if(S.money<F.p){toast(`Not enough money (${money(F.p)})`);sfx(180);return;}S.money-=F.p;if(k=='ring')S.ring++;else S.inv[k]=(S.inv[k]||0)+1;sfx(900);save(1);updateHud();toast(`Bought ${F.n}`);openShop('Gifts');}
 // decorate: buy → place, rotate (mirror to the other iso facing), move, store
 function decorMenu(){if(SC.kind!='room'){toast('Go to a resident\'s room to decorate');return;}const n=SC.n,inv=Object.entries(S.inv).filter(([k,v])=>v>0&&FURN[k]),placed=S.rooms[n].furn;
- openSheet(`<h3>DECORATE · ${ROOMS[n].name.toUpperCase()}</h3><p>Choose an item from storage, move it with the D-pad (it snaps to the floor tiles — green fits, red is blocked), ROTATE, then PLACE.${SC.R.type=='paint'?' This apartment is painted art with its own furniture, so new pieces go on the free floor only.':''}</p><h4 style="margin:6px 0">STORAGE</h4><div class="grid3">`+(inv.map(([k,v])=>`<button class="item" onclick="startDecor('${k}')"><span class="own">${v}</span><img src="${furnThumb(k)}"><span>${FURN[k].n}</span></button>`).join('')||'<p>Empty — buy furniture in the shop.</p>')+`</div>
- <button class="mbtn gold" onclick="openShop()">Open the furniture shop</button><h4 style="margin:10px 0 6px">PLACED IN THIS ROOM</h4><div class="grid3">`+(placed.map((f,i)=>`<button class="item" onclick="pickFurn(${i})"><img src="${furnThumb(f.k)}"><span>${furnName(f.k)}</span><small style="font-size:9px">move / store</small></button>`).join('')||'<p>Nothing placed yet.</p>')+`</div>`);}
+ openSheet(`<h3>DECORATE · ${ROOMS[n].name.toUpperCase()}</h3><p>Choose an item from storage, move it with the D-pad (it snaps to the floor tiles — green fits, red is blocked), ROTATE, then PLACE.${SC.R.type=='paint'?' This apartment is painted art with its own furniture, so new pieces go on the free floor only.':''}</p><h4 style="margin:6px 0">STORAGE</h4><div class="grid3">`+(inv.map(([k,v])=>`<button class="item" onclick="startDecor('${k}')"><span class="own">${v}</span><img src="${furnThumb(k)}"><span>${FURN[k].n}</span></button>`).join('')||'<p>Storage is empty.</p>')+`</div>
+ <h4 style="margin:10px 0 6px">PLACED IN THIS ROOM</h4><div class="grid3">`+(placed.map((f,i)=>`<button class="item" onclick="pickFurn(${i})"><img src="${furnThumb(f.k)}"><span>${furnName(f.k)}</span><small style="font-size:9px">move / store</small></button>`).join('')||'<p>Nothing placed yet.</p>')+`</div>`);}
 function startDecor(k){if(SC.kind!='room')return;if(!S.inv[k]){toast('None in storage');return;}S.inv[k]--;decor={k,r:0,from:null};closeSheet();toast('Move with the D-pad · ROTATE · PLACE');updateInfo();}
 function pickFurn(i){const f=S.rooms[SC.n].furn[i];if(FURN[f.k]&&FURN[f.k].fixed){toast(`${FURN[f.k].n} is built into the bathroom`);return;}decor={k:f.k,r:f.r||0,from:f};const [x,y]=SC.G.pt(f.u+fpOf(f)[0]/2,f.v+fpOf(f)[1]/2);cur.x=x;cur.y=y;closeSheet();toast('Move it, ROTATE, PLACE — or MENU to store it');}
 function placeDecor(){if(!decor)return;const f=decorF(),G=SC.G;if(!canPlace(G,f,decor.from)){toast("It doesn't fit there — find a free green spot");sfx(180);return;}
@@ -409,7 +412,7 @@ function storeDecor(){if(!decor)return;if(decor.from){const fs=S.rooms[SC.n].fur
 function openMenu(){if(decor){openSheet(`<h3>PLACING ${FURN[decor.k].n.toUpperCase()}</h3><button class="mbtn" onclick="decor.r=(decor.r+1)%4;closeSheet()">Rotate</button><button class="mbtn gold" onclick="closeSheet();placeDecor()">Place here</button><button class="mbtn" onclick="storeDecor()">Put it in storage</button><button class="mbtn" onclick="closeSheet();cancelDecor()">Cancel</button>`);return;}
  openSheet(`<h3>MENU</h3><div class="grid2">
  <button class="mbtn blue" onclick="saveSlot()">Save game<small>manual slot + autosave</small></button><button class="mbtn" onclick="loadSlot()">Load game<small>${localStorage.getItem(SLOT)?'slot 1':'no save yet'}</small></button>
- <button class="mbtn" onclick="residents()">Residents<small>tenant info</small></button><button class="mbtn gold" onclick="openShop()">Shop<small>furniture · ring</small></button>
+ <button class="mbtn" onclick="residents()">Residents<small>tenant info</small></button><button class="mbtn gold" onclick="openShop()">Shop<small>food · drinks · ring</small></button>
  <button class="mbtn" onclick="decorMenu()" ${SC.kind=='room'?'':'disabled'}>Decorate<small>${SC.kind=='room'?'this room':'in a room only'}</small></button><button class="mbtn" onclick="bagView()">Bag<small>food you carry</small></button>
  <button class="mbtn" onclick="openTeleport()">Teleport<small>gym, cafe, club…</small></button><button class="mbtn pink" onclick="devPanel()">Cheats<small>developer tools</small></button></div>
  <button class="mbtn" onclick="helpSheet()">How to play</button><button class="mbtn" onclick="if(confirm('Reset all progress?')){localStorage.removeItem('${SAVE}');location.reload()}">Reset save</button><p style="font-size:11px;text-align:center">Lumen Residences ${VERSION}</p>`);}
@@ -420,8 +423,8 @@ function residents(){openSheet(`<h3>RESIDENTS</h3>`+TENANT_ORDER.map(n=>{const u
 function bagView(){const f=foodList(S.bag);openSheet(`<h3>BAG</h3>${f.map(([k,v])=>`<div class="fcell"><img src="${foodImg(k).src}"><span>${FOOD[k].n}</span><i>${v}</i></div>`).join('')||'<p>Empty.</p>'}<p>Rings: ${S.ring}</p>`);}
 function helpSheet(){S.seenHelp=1;save(1);openSheet(`<h3>WELCOME, MANAGER</h3><p>You run <b>Lumen Residences</b>. Each resident pays <b>£20 a day</b>.</p>
  <p>• <b>D-pad</b> moves the cursor (or tap the screen, drag to look around). <b>OK</b> uses what's under it.</p><p>• <b>FLOOR</b> opens the building: tap a resident's face to visit. <b>FIND NEW RESIDENT</b> costs hearts.</p>
- <p>• <b>TALK</b> and <b>FEED</b> earn hearts. Use furniture together. Hearts climb Stranger → Friend → Crush → Dating → Engaged → Married.</p><p>• The lobby <b>front door</b> teleports you to the Gym, Cafe, Restaurant, Park, Furniture Shop and Night Club.</p>
- <p>• <b>MENU</b>: save/load, residents, shop, decorate, cheats.</p><button class="mbtn gold" onclick="closeSheet()">Let's go!</button>`);}
+ <p>• <b>TALK</b> and <b>FEED</b> earn hearts. Use furniture together. Hearts climb Stranger → Friend → Crush → Dating → Engaged → Married.</p><p>• The lobby <b>front door</b> teleports you to the Gym, Cafe, Restaurant, Park, Food Hall, Night Club and Roof Terrace.</p>
+ <p>• <b>MENU</b>: save/load, residents (story chapters), food shop, decorate, cheats.</p><button class="mbtn gold" onclick="closeSheet()">Let's go!</button>`);}
 // ---------------- Cheats (developer panel, as in Fantasy Town v0.0.2.3) ----------------
 let DBG=localStorage.getItem('lr_dbg')=='1',devT='Ares';
 function devDo(k,v){if(k=='money'){S.money+=v;toast('+'+money(v));}else if(k=='hearts'){S.hearts+=v;toast('♥ +'+v);}

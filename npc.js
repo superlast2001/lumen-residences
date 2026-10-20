@@ -78,7 +78,7 @@ const GYMCAST=NPCS.slice(0,9),CLUBCAST=NPCS.slice(9,18),LOBBYCAST=NPCS.slice(18)
 const NPC_SCHED=[
  // ---- Lobby (building common area): deliveries, early readers, residents' friends passing through
  {n:'Theo',p:'lobby',h:[8,11],t:[5,5],roam:4,say:"Morning! Three parcels for the fourth floor, one smells like cake."},
- {n:'Theo',p:'fshop',h:[11,14],t:[5,7],roam:3,say:"Delivering a sofa. Well, the receipt for a sofa. The sofa's in the van."},
+ {n:'Theo',p:'fshop',h:[11,14],t:[5,7],roam:3,say:"Picking up lunch for the whole delivery crew. Twelve bubble teas. TWELVE."},
  {n:'Theo',p:'lobby',h:[14,23],t:[5,5],roam:4,say:"Last round of the day. Who orders a lamp at 9 PM? Zayne, that's who."},
  {n:'Elise',p:'lobby',h:[7,10],t:[7,3],flip:1,say:"The lobby's quieter than the library. Don't tell them."},
  {n:'Elise',p:'cafe',h:[10,14],t:[8,6],flip:1,say:"One oat latte, one chapter. That's the deal I make with myself."},
@@ -117,9 +117,9 @@ const NPC_SCHED=[
  {n:'Ivy',p:'park',h:[13,18],t:[7,8],flip:1,act:'dance',say:"Practising my moves where nobody's watching. ...You're watching."},
  {n:'Kai',p:'park',h:[18,20],t:[5,8],act:'wave',say:"Look, the first star! No wait, that's a plane."},
  // ---- Furniture Shop
- {n:'Nova',p:'fshop',h:[10,15],t:[6,3],flip:1,act:'wave',say:"I need a velvet sofa. I don't need a velvet sofa. I NEED a velvet sofa."},
- {n:'Kai',p:'fshop',h:[12,18],t:[2,7],act:'dance',say:"See that chandelier? That's going over my bed. Probably a bad idea."},
- {n:'Leon',p:'fshop',h:[17,21],t:[7,7],flip:1,say:"They said this bench holds 300 kg. I'm testing that claim."},
+ {n:'Nova',p:'fshop',h:[10,15],t:[6,3],flip:1,act:'wave',say:"Mango boba or taro boba? ...Both. The answer is both."},
+ {n:'Kai',p:'fshop',h:[12,18],t:[2,7],act:'dance',say:"Free samples at the dumpling stand! I've had six. Don't tell them."},
+ {n:'Leon',p:'fshop',h:[17,21],t:[7,7],flip:1,say:"Post-gym protein run. Steak plate, double rice, no regrets."},
  // ---- Roof Terrace (building common area): sunbeds, BBQ, skyline
  {n:'Priya',p:'roof',h:[6,8],t:[5,6],say:"Kettlebell swings with a view. Best gym in the city."},
  {n:'Dex',p:'roof',h:[13,17],t:[3,4],say:"Coffee tastes better ten floors up. That's just maths."},
