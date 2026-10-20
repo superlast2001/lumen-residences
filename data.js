@@ -2,7 +2,7 @@
 // Lumen Residences — game data. All character art is the user's own sheets, sliced (see assets/tools, assets/ares/*.py).
 const L=(t,e='smile')=>({t,e});
 const REL=['Stranger','Acquaintance','Friend','Close Friend','Crush','Dating','Engaged','Married'],REL_P=[0,8,24,50,85,130,190,260];
-const PLACE_N={home:'Home',gym:'Lumen Gym',cafe:'Cafe Lumière',restaurant:'Restaurant Rosso',park:'City Park',fshop:'Furniture Shop',club:'Night Club Neon'};
+const PLACE_N={home:'Home',gym:'Lumen Gym',cafe:'Cafe Lumière',restaurant:'Restaurant Rosso',park:'City Park',fshop:'Furniture Shop',club:'Night Club Neon',roof:'Roof Terrace'};
 
 // ---------------- TENANTS ----------------
 // sz: on-screen chibi height scale; walkFace: which way the sheet's walk frames face; thigh: fraction of the CG height at mid-thigh
@@ -179,23 +179,44 @@ Ophion:{type:'paint',img:'assets/ophion/room_hd.jpg',W:1536,H:1024,ch:112,name:'
   {n:'Spa tub',act:'bath',pose:'bath',t:[20,30],at:[18,30.5],clip:.5},{n:'Vanity',act:'wash',pose:'front',t:[21,28]}],
  zoneLabel:{STUDY:[16,12],LOUNGE:[21,18.5],DINING:[25,12.5]}},
 };
-// ---- v0.3.2: the user's DEFAULT APARTMENT (orange walls, dark grey skirting, glossy cream tiles, balcony glass doors with
-// yellow curtains + sea view, wall AC, glass front door, glass bathroom with a built-in shower in the front-right corner).
-// Drawn in code on the tile grid (world.js drawAptShell) so walls, the bathroom doorway, A* and depth sorting all work.
-// 179 floor tiles (old rooms: 120). The tenants' themed rooms stay in ROOMS_THEMED: set ROOM_STYLE='themed' to switch back.
+// ---- v0.3.3: the user's DEFAULT APARTMENT, now a real multi-room flat in the same look (orange walls, dark skirting, white wall caps,
+// glossy cream tiles, yellow curtains, glass front door, blue-tiled bathroom with the walk-in glass shower). Drawn in code on the tile
+// grid (apt.js) so walls, doorways, A* and depth sorting all work. 18x15 grid, 246 floor tiles (v0.3.2: 179, old themed rooms: 120).
+// Rooms: Balcony (decking + sea view, glass sliding doors) · Living room · Entrance hall & corridor · Kitchen & dining · Study · Bedroom · Bathroom.
+// Interior walls are cut-away (Sims style) so every room stays readable on a phone; tenants only cross between rooms through doorways.
+// The tenants' old themed rooms stay in ROOMS_THEMED: set ROOM_STYLE='themed' to switch back.
 const ROOM_STYLE='default';
-const APT_LABELS=[[2.6,4],[6.8,2.6],[5,9.4]];
-function aptRoom(n){const T=ROOMS_THEMED[n];const lbl={};(TENANTS[n].zones||[]).forEach((z,i)=>lbl[z.id]=APT_LABELS[i%3]);
- return{type:'tile',style:'apt',name:n+"'s Apartment",cols:15,rows:13,TW,WH:150,LH:30,ch:122,z:0,
+const APT_V=3,APT_V2_DEF=['bed_apt','sink','fridge'];
+// starter furniture: the same furnished flat for everyone, plus a study that suits each tenant
+const APT_BASE=[
+ // balcony
+ ['sunbed',0,0],['parasol',1,0],['table_patio',0,4],['chair_patio',0,3],['chair_patio',0,5,2],['lemon_tree',0,7],['planter_box',1,7],
+ // living room
+ ['tv_modern',5,0],['shelf_low',7,0],['plant_big',9,0],['lamp_modern',3,0],['rug_round',5,2],['table_coffee',5,3],['sofa_honey',5,4,2],['armchair_teal',8,2,3],['beanbag',3,5],['table_side',9,4],
+ // entrance hall + corridor
+ ['clock_tall',11,0],['plant_palm',11,5],['plant',3,6],
+ // kitchen & dining
+ ['counter_white',12,0],['stove',14,0],['fridge',15,0],['counter_white',16,0],['table_wood',14,3],['chair_dining',14,2],['chair_dining',15,2],['chair_dining',14,4,2],['chair_dining',15,4,2],['chair_dining',16,3,3],['plant',17,5],
+ // bedroom
+ ['bed_apt',11,8],['nightstand',10,8],['nightstand',13,8],['wardrobe_honey',8,11,1],['rug_stripe',10,11],['dresser',8,9,1],['mirror_floor',8,14,1],['lamp_floor',8,8],['monstera',13,14],
+ // bathroom (the glass shower is built in)
+ ['shower_glass',16,8,0,1],['vanity',14,11,1],['toilet',14,13,1],['bathtub',16,12],['washer',14,10,1],['towel_rack',17,11]];
+const APT_STUDY={
+ Ares:[['treadmill',5,8],['bench_black',4,11],['ball',7,13],['kettlebell',7,8],['plant',3,13]],
+ Zayne:[['desk_modern',5,8],['arcade',7,8],['speaker',3,11,1],['shelf_low',4,13,2],['beanbag',7,12]],
+ Batzz:[['speedbag',7,8],['bench_black',4,11],['armchair',3,10,1],['dumbbells',5,13,2],['plant',7,13]],
+ Ophion:[['desk_modern',5,8],['caseboard',7,8],['bookshelf',3,11,1],['globe',5,13],['cabinet_file',3,13,1]]};
+function aptRoom(n){const T=ROOMS_THEMED[n];
+ return{type:'tile',style:'apt',name:n+"'s Apartment",cols:18,rows:15,TW,WH:150,LH:30,ch:122,z:0,
  theme:{bg:'#efe7dc',wall:'#f39a22',trim:'#ffffff',lowWall:'#f08f1c',base:'#4b4a52'},
- zones:{M:{n:'Living space',rs:[[3,0,12,2],[0,2,15,4],[0,6,11,5],[0,11,10,2]],floor:'cream'},W:{n:'Bathroom',rs:[[11,6,4,5]],floor:'blue'}},
- doors:[[10,8,11,8]],
- // tall see-through bathroom partition (zone edge v=6, u 11..12) and the tiled shower back wall (u 13..14)
- tall:[{v:6,u0:11,u1:13,kind:'glass'},{v:6,u0:13,u1:15,kind:'tile'}],
- entry:{t:[12,0],out:[0,-1],side:'R',img:'glass'},
- balcony:{side:'L',line:0,v0:3,v1:9},ac:{side:'L',line:3,v0:0,v1:2},
- zoneLabel:lbl,themed:T,
- defFurn:[{k:'shower_glass',u:13,v:6,fixed:1},{k:'bed_apt',u:8,v:0},{k:'sink',u:11,v:10,r:1},{k:'fridge',u:5,v:0}]};}
+ zones:{B:{n:'Balcony',rs:[[0,0,3,8]],floor:'deck'},L:{n:'Living room',rs:[[3,0,7,6]],floor:'cream'},H:{n:'Hallway',rs:[[10,0,2,6],[3,6,15,2]],floor:'cream'},
+  K:{n:'Kitchen & dining',rs:[[12,0,6,6]],floor:'check'},S:{n:'Study',rs:[[3,8,5,6]],floor:'walnut'},R:{n:'Bedroom',rs:[[8,8,6,7]],floor:'wood'},W:{n:'Bathroom',rs:[[14,8,4,6]],floor:'blue'}},
+ doors:[[2,2,3,2],[2,3,3,3],[9,2,10,2],[5,5,5,6],[6,5,6,6],[7,5,7,6],[11,3,12,3],[14,5,14,6],[15,5,15,6],[3,7,3,8],[9,7,9,8],[14,7,14,8]],
+ // tall partitions: the balcony's glass sliding doors (u-line 3) and the tiled shower wall behind the walk-in shower (v-line 8)
+ tallU:[{u:3,v0:0,v1:8,kind:'glass',doors:[2,3]}],tall:[{v:8,u0:16,u1:18,kind:'tile'}],
+ entry:{t:[10,0],out:[0,-1],side:'R',img:'glass'},
+ openView:{side:'L',line:0,v0:0,v1:8},ac:{side:'R',line:0,v0:5,v1:8},windows:[{side:'R',line:0,s0:16,s1:18},{side:'L',line:3,s0:10,s1:12}],drain:[14.6,11.6],
+ themed:T,defFurn:[...APT_BASE,...(APT_STUDY[n]||[])].map(([k,u,v,r=0,fixed])=>fixed?{k,u,v,r,fixed:1}:{k,u,v,r})};}
 const ROOMS={};for(const n of ['Ares','Zayne','Batzz','Ophion'])ROOMS[n]=ROOM_STYLE=='themed'?ROOMS_THEMED[n]:aptRoom(n);
 for(const RR of [ROOMS,ROOMS_THEMED])for(const n in RR){const R=RR[n];if(R.type=='tile'){R.O=tileO(R.cols,R.rows,R.WH);[R.W,R.H]=tileWH(R.cols,R.rows,R.WH);}}
 
@@ -210,12 +231,34 @@ bed:{n:'Double bed',cat:'Bedroom',p:90,act:'sleep'},bed_apt:{n:'Cosy honey bed',
 bathtub:{n:'White bathtub',cat:'Bath',p:70,act:'bath'},shower_glass:{n:'Glass shower (built-in)',cat:'Bath',p:0,act:'shower',fixed:1,noshop:1},shower:{n:'Glass shower',cat:'Bath',p:80,act:'shower'},toilet:{n:'Toilet',cat:'Bath',p:30,act:'toilet'},sink:{n:'Pedestal sink',cat:'Bath',p:25,act:'wash'},vanity:{n:'Bathroom vanity',cat:'Bath',p:40,act:'wash'},
 desk:{n:'Desk & chair',cat:'Study',p:55,act:'read'},chair_red:{n:'Red chair',cat:'Study',p:20,act:'sit'},bookshelf:{n:'Tall bookshelf',cat:'Study',p:60,act:'read'},bookcase_red:{n:'Red bookcase',cat:'Study',p:60,act:'read'},
 treadmill:{n:'Treadmill',cat:'Gym',p:110,act:'run'},machine_red:{n:'Cardio machine',cat:'Gym',p:100,act:'run'},bench_black:{n:'Weight bench',cat:'Gym',p:45,act:'lift'},bench_blue:{n:'Flat bench',cat:'Gym',p:30,act:'lift'},
-kettlebell:{n:'Kettlebell',cat:'Gym',p:15,act:'lift'},pullup:{n:'Pull-up tower',cat:'Gym',p:70,act:'pull'},speedbag:{n:'Speed bag stand',cat:'Gym',p:35,act:'punch'},ball:{n:'Exercise ball',cat:'Gym',p:12,act:'stretch'},lockers:{n:'Red gym lockers',cat:'Gym',p:40},
+kettlebell:{n:'Kettlebell',cat:'Gym',p:15,act:'lift'},dumbbells:{n:'Dumbbell rack',cat:'Gym',p:85,act:'lift'},speaker:{n:'Speaker stack',cat:'Living',p:140,act:'dance'},pullup:{n:'Pull-up tower',cat:'Gym',p:70,act:'pull'},speedbag:{n:'Speed bag stand',cat:'Gym',p:35,act:'punch'},ball:{n:'Exercise ball',cat:'Gym',p:12,act:'stretch'},lockers:{n:'Red gym lockers',cat:'Gym',p:40},
 plant:{n:'Leafy plant',cat:'Decor',p:18},plant_palm:{n:'Potted palm',cat:'Decor',p:22},plant_big:{n:'Big potted palm',cat:'Decor',p:25},palm:{n:'Palm in white pot',cat:'Decor',p:22},roses:{n:'Red-flower plant',cat:'Decor',p:24},
 statue_white:{n:'Marble statue',cat:'Decor',p:70},armor:{n:'Red armour',cat:'Decor',p:85},lamp_warm:{n:'Warm floor lamp',cat:'Decor',p:20},
+// ---- v0.3.3 additions (painted in furnart2.js). Prices run basic (£8-40) → standard (£40-120) → premium (£120-400) → LUXURY (£600+).
+nightstand:{n:'Honey nightstand + lamp',cat:'Bedroom',p:28},wardrobe_honey:{n:'Mirrored honey wardrobe',cat:'Bedroom',p:95,act:'dress'},dresser:{n:'Cream dresser',cat:'Bedroom',p:70},
+bed_single:{n:'Single bed',cat:'Bedroom',p:45,act:'sleep'},mirror_floor:{n:'Standing mirror',cat:'Bedroom',p:35,act:'dress'},
+sofa_teal:{n:'Teal sofa',cat:'Living',p:85,act:'sit'},sofa_honey:{n:'Honey sofa',cat:'Living',p:90,act:'sit'},armchair_teal:{n:'Teal armchair',cat:'Living',p:40,act:'sit'},
+beanbag:{n:'Pink beanbag',cat:'Living',p:20,act:'sit'},table_side:{n:'Round side table',cat:'Living',p:18},rug_round:{n:'Round cream rug',cat:'Living',p:22},rug_stripe:{n:'Striped rug',cat:'Living',p:26},
+tv_modern:{n:'Smart TV + white console',cat:'Living',p:140,act:'tv'},lamp_modern:{n:'Arc floor lamp',cat:'Living',p:45},shelf_low:{n:'Low bookshelf',cat:'Living',p:55,act:'read'},
+aquarium:{n:'Aquarium',cat:'Living',p:180,act:'watch'},arcade:{n:'Arcade cabinet',cat:'Living',p:220,act:'game'},fireplace:{n:'Electric fireplace',cat:'Living',p:260},
+stove:{n:'Stove & oven',cat:'Kitchen',p:75,act:'cook'},counter_white:{n:'White kitchen counter',cat:'Kitchen',p:65,act:'cook'},island:{n:'Teal kitchen island',cat:'Kitchen',p:150,act:'cook'},
+table_wood:{n:'Oak dining table',cat:'Kitchen',p:80,act:'eat'},chair_dining:{n:'Dining chair',cat:'Kitchen',p:22,act:'eat'},
+desk_modern:{n:'White desk + monitor',cat:'Study',p:110,act:'read'},chair_office:{n:'Office chair',cat:'Study',p:35,act:'sit'},cabinet_file:{n:'Filing cabinet',cat:'Study',p:30,act:'read'},
+caseboard:{n:'Detective case board',cat:'Study',p:48,act:'read'},globe:{n:'Desk globe',cat:'Study',p:24},
+washer:{n:'Washing machine',cat:'Bath',p:90,act:'wash'},towel_rack:{n:'Towel rack',cat:'Bath',p:16},laundry_basket:{n:'Laundry basket',cat:'Bath',p:8},
+monstera:{n:'Monstera plant',cat:'Decor',p:28},cactus:{n:'Little cactus',cat:'Decor',p:10},vase_flowers:{n:'Flowers on a plinth',cat:'Decor',p:34},clock_tall:{n:'Grandfather clock',cat:'Decor',p:120},
+sunbed:{n:'Sun lounger',cat:'Balcony',p:60,act:'sunbathe'},table_patio:{n:'Patio table',cat:'Balcony',p:30,act:'eat'},chair_patio:{n:'Patio chair',cat:'Balcony',p:18,act:'sit'},parasol:{n:'Striped parasol',cat:'Balcony',p:40},
+bbq:{n:'Kettle barbecue',cat:'Balcony',p:55,act:'cook'},planter_box:{n:'Flower planter',cat:'Balcony',p:32},lemon_tree:{n:'Potted lemon tree',cat:'Balcony',p:38},
+lux_bed:{n:'Dragon King bed',cat:'Luxury',p:2400,act:'sleep',lux:1},lux_sofa:{n:'Black chesterfield sofa',cat:'Luxury',p:1200,act:'sit',lux:1},lux_armchair:{n:'Crimson velvet wingback',cat:'Luxury',p:650,act:'sit',lux:1},
+lux_shelf:{n:'Grand gilded bookcase',cat:'Luxury',p:1500,act:'read',lux:1},lux_chandelier:{n:'Gold crystal chandelier',cat:'Luxury',p:1900,lux:1},lux_rug:{n:'Gold dragon rug',cat:'Luxury',p:800,lux:1},
+lux_statue:{n:'Golden dragon statue',cat:'Luxury',p:1800,lux:1},lux_table:{n:'Black marble dining table',cat:'Luxury',p:1400,act:'eat',lux:1},lux_chair:{n:'Lacquer dining chair',cat:'Luxury',p:420,act:'eat',lux:1},
+lux_tub:{n:'Rose-petal spa tub',cat:'Luxury',p:2200,act:'bath',lux:1},lux_wardrobe:{n:'Lacquer dragon wardrobe',cat:'Luxury',p:1300,act:'dress',lux:1},lux_lantern:{n:'Gilded floor lantern',cat:'Luxury',p:600,lux:1},
+lux_screen:{n:'Dragon folding screen',cat:'Luxury',p:900,lux:1},lux_bonsai:{n:'Bonsai in a gold pot',cat:'Luxury',p:700,lux:1},lux_piano:{n:'Black grand piano',cat:'Luxury',p:3000,act:'play',lux:1},
+lux_bar:{n:'Lacquer bar cabinet',cat:'Luxury',p:1600,act:'drink',lux:1},lux_vanity:{n:'Marble & gold vanity',cat:'Luxury',p:950,act:'wash',lux:1},
 ring:{n:'Engagement ring',cat:'Special',p:500,item:1},
 };
-const FURN_CATS=['Gym','Living','Kitchen','Bedroom','Bath','Study','Decor','Special'];
+const TIER=p=>p>=600?'Luxury':p>=120?'Premium':p>=40?'Standard':'Basic';
+const FURN_CATS=['Living','Bedroom','Kitchen','Bath','Study','Balcony','Decor','Gym','Luxury','Special'];
 const FOOD={noodles:{n:'Noodle bowl',p:6},hotpot:{n:'Hot pot',p:9},grill:{n:'Grill platter',p:12},paella:{n:'Paella',p:10},sushi:{n:'Sushi plates',p:11},steak:{n:'Steak box',p:14},
  wine:{n:'Red wine',p:9},water:{n:'Water bottle',p:1},jar:{n:'Pickle jar',p:3},sauce:{n:'Hot sauce',p:2},rice:{n:'Rice cooker',p:8},coffee:{n:'Coffee cup',p:2},whiskey:{n:'Whiskey',p:12},juice:{n:'Orange juice',p:3},pizza:{n:'Pizza box',p:9},bento:{n:'Bento box',p:7}};
 const SHOP_FOOD={cafe:['coffee','juice','water','bento','noodles','pizza'],restaurant:['steak','sushi','paella','grill','hotpot','rice','wine','whiskey'],club:['whiskey','wine','juice','water']};
@@ -227,13 +270,10 @@ const EXIT={t:[0,8],out:[-1,0]};
 const PLACES={
 lobby:{n:'Lumen Residences · Lobby',wall:['#b95f43','#a84f3d'],trim:'#f0d3ae',tex:'t02',sign:'LUMEN RESIDENCES',entry:EXIT,elev:{t:[6,0],out:[0,-1]},
  props:[F('plant_big',0,0),F('desk',2,0),F('palm',9,0),F('lamp_warm',4,0),F('sofa_cream',0,3,1),F('table_coffee',2,3,1),F('armchair',2,2),F('plant',0,6,1),F('roses',9,4)],
- extras:[{n:'Theo',t:[5,5]},{n:'Elise',t:[7,3],flip:1}],
  hot:[{id:'elevator',n:'Elevator',kind:'door'},{id:'exit',n:'Front door',kind:'exit'},{id:'desk',n:'Reception',t:[3,2],kind:'desk'}]},
 gym:{n:'Lumen Gym',wall:['#4a5468','#3a4254'],trim:'#d6dbe6',tex:'t23',sign:'LUMEN GYM',entry:EXIT,
  props:[F('treadmill',1,0),F('treadmill',4,0),F('machine_red',7,0),F('lockers',9,0),F('pullup',0,2,1),F('speedbag',0,4,1),F('lockers',0,6,1),
   F('bench_black',3,4),F('kettlebell',6,4),F('ball',8,4),F('rug_red',5,6),F('bench_blue',2,7),F('plant_big',0,0)],
- extras:[{n:'Mika',on:'treadmill',oi:0},{n:'Sora',on:'treadmill',oi:1},{n:'Leon',t:[7,2],flip:1},{n:'Big Dano',t:[4,3]},{n:'Bram',t:[3,6]},{n:'Jett',t:[1,4],flip:0},
-  {n:'Coach Rin',t:[6,7]},{n:'Priya',t:[6,5],flip:1},{n:'Gus',t:[8,8],flip:1}],
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'train',n:'Train together',t:[5,8],kind:'train'}]},
 cafe:{n:'Cafe Lumière',wall:['#e9c9a0','#d9b48a'],trim:'#fff4dc',tex:'t12',sign:'CAFE LUMIÈRE',entry:EXIT,
  props:[F('counter',2,0),F('fridge2',4,0),F('lamp_warm',6,0),F('plant_palm',9,0),F('plant',0,5,1),F('table_coffee',5,5),F('chair_red',5,4),F('chair_red',6,4),F('chair_red',4,5,1),
@@ -251,8 +291,11 @@ fshop:{n:'Furniture Shop',wall:['#f2efe8','#e4dfd4'],trim:'#c9a35a',tex:'t20',si
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'shop',n:'Shop counter',t:[4,4],kind:'shop'}]},
 club:{n:'Night Club Neon',wall:['#1c1630','#151026'],trim:'#c15aff',tex:'t32',sign:'CLUB NEON',neon:1,entry:EXIT,dance:[3,3,5,5],
  props:[F('djbooth',2,1),F('speaker',1,1),F('speaker',6,1),F('counter',8,0),F('barstool',8,1),F('barstool',9,1),F('sofa_black',0,3,1),F('table_coffee',1,3,1),F('armchair',0,6,1),F('plant_palm',9,2),F('speaker',9,6,1)],
- extras:[{n:'Nova',t:[4,4]},{n:'Kai',t:[6,4]},{n:'Luz',t:[5,6]},{n:'Ivy',t:[3,6]},{n:'Zed',t:[4,6]},{n:'Amara',t:[6,7],flip:1},{n:'Rafe',t:[7,5],flip:1},{n:'Dex',t:[7,2],flip:1},{n:'Mei',t:[8,3],flip:1}],
  hot:[{id:'exit',n:'Exit',kind:'exit'},{id:'dance',n:'Dance floor',t:[5,5],kind:'dance'},{id:'counter',n:'Bar',t:[8,2],kind:'food'}]},
+roof:{n:'Roof Terrace',outdoor:1,roof:1,sign:'ROOF TERRACE',entry:EXIT,
+ props:[F('sunbed',1,0),F('sunbed',3,0),F('parasol',2,0),F('table_patio',3,4),F('chair_patio',2,4,1),F('chair_patio',4,4,3),F('bbq',1,7,1),F('planter_box',8,0),F('lemon_tree',9,2),
+  F('table_patio',7,5),F('chair_patio',7,4),F('chair_patio',7,6,2),F('lux_lantern',9,5),F('planter_box',0,2,1),F('plant_big',9,9),F('lux_bonsai',5,0)],
+ hot:[{id:'exit',n:'Stairs down',kind:'exit'},{id:'stroll',n:'Skyline view',t:[6,2],kind:'stroll'}]},
 };
-const TRAVEL=['gym','cafe','restaurant','park','fshop','club'];
-const PLACE_DESC={gym:'Train with tenants · Ares coaches here',cafe:'Coffee, bento & snacks',restaurant:'Steak, sushi & dinner',park:'Fresh air & stakeouts',fshop:'Buy furniture for the rooms',club:'Zayne DJs 9 PM – 3 AM'};
+const TRAVEL=['gym','cafe','restaurant','park','fshop','club','roof'];
+const PLACE_DESC={gym:'Train with tenants · Ares coaches here',cafe:'Coffee, bento & snacks',restaurant:'Steak, sushi & dinner',park:'Fresh air & stakeouts',fshop:'Buy furniture for the rooms',club:'Zayne DJs 9 PM – 3 AM',roof:'Building common area · sunbeds, BBQ & skyline'};

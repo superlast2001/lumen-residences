@@ -190,4 +190,4 @@ function render(k,r,eu,layer){const def=DEF[k];if(!def)return null;const key=k+'
  c.putImageData(out,0,0);order.forEach(it=>{if(it.post)it.draw(c,ctx);});
  const res={cv,ox:x0,oy:y0,w:cw/CS,h:chh/CS};cache.set(key,res);return res;}
 const thumbs={};function thumb(k){if(thumbs[k])return thumbs[k];const r=render(k,1,[45,22.5]);if(!r)return'';thumbs[k]=r.cv.toDataURL();return thumbs[k];}
-return{DEF,render,thumb,C,tone};})();
+return{DEF,render,thumb,C,tone,H:{rr,knob,sofa,bed,shelf,plant,tone2,rgba,rnd,hx}};})();

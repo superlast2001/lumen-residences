@@ -2,7 +2,7 @@
 
 A portrait phone condo-life game in the Kairosoft style. Play it at **https://superlast2001.github.io/lumen-residences/**
 
-You start in the lobby. **FLOOR** opens the building-front floor picker, and the lobby door opens the teleport picker (Gym, Cafe, Restaurant, Park, Furniture Shop, Night Club). The **D-pad** moves the cursor and **OK** interacts. **TALK** and **FEED** work on the nearest resident. **MENU** holds save/load, residents, the shop, decorate, bag, teleport, cheats and help.
+You start in the lobby. **FLOOR** opens the building-front floor picker, and the lobby door opens the teleport picker (Gym, Cafe, Restaurant, Park, Furniture Shop, Night Club, Roof Terrace). The **D-pad** moves the cursor and **OK** interacts. **TALK** and **FEED** work on the nearest resident. **MENU** holds save/load, residents, the shop, decorate, bag, teleport, cheats and help.
 
 - Residents are Ares, Zayne, Batzz and Ophion. Each has their own room, schedule, personality dialogue and £20 a day rent (collected at 6 AM). The relationship ladder runs Stranger → … → Crush (CONFESSION) → Dating (PROPOSE with a ring) → Married.
 - Find New Resident costs hearts and shows a stamp card. The profile card has a portrait, chibi, bio and per-zone ratings from 1 to 5 stars.
@@ -15,8 +15,18 @@ You start in the lobby. **FLOOR** opens the building-front floor picker, and the
 - The lobby and town places have no user art. They are procedural iso interiors using sheet furniture sprites.
 - Some furniture slices were unusable (stove, island, stools) and are excluded.
 - Ophion's and Batzz's source CG panels crop their wings and tail at the edges.
-- Room pathing uses hand-placed waypoints, so it is approximate.
 - There is no player avatar, to avoid inventing a character; a cursor is used instead. The ring is a canvas drawing.
+
+## v0.3.3 — a real multi-room flat, much more furniture, NPCs everywhere
+- **Bigger default apartment** (18×15 grid, 240 floor tiles, up from 179) with seven walled rooms: balcony (decking, sea view, glass railing, yellow-curtained glass sliding doors), living room, entrance hall and corridor, kitchen and dining, study, bedroom, and a bathroom with the walk-in glass shower. Interior walls are cut-away orange walls with white caps (Sims style) so every room stays readable. Tenants only cross between rooms through the 12 doorways (A* plus a door-edge check in the tests). Each room has its own floor: cream tiles, kitchen checks, honey and walnut planks, blue bathroom tiles and decking.
+- **Camera:** the default zoom fits the whole flat, front door included, on a 390×844 phone. Zoom in and out with the **+ / −** buttons, pinch or the mouse wheel (up to 3.2×).
+- **No star ratings or zone labels on the floor.** Zone ratings are still kept and shown only in MENU → Residents (profile card).
+- **Furniture:** 50+ new pieces drawn in `furnart2.js` in the same painted chibi sticker style. Every starter flat comes fully furnished (bed, nightstands, wardrobe, dresser, sofa, armchair, TV, rugs, lamps, plants, kitchen counters, stove, fridge, dining table and chairs, bath, toilet, vanity, washer, and so on), plus a study that suits each tenant.
+- **Shop:** sorted by price and badged Basic, Standard, Premium or Luxury. A new **✦ Luxury** tab holds the Dragon Suite collection, inspired by Ophion's old room: dragon bed, chandelier, chesterfield, velvet wingback, grand bookcase, piano, bar, tub and more, priced £420–£3,000.
+- **New uses and poses:** cook (stove, island, BBQ), dress (wardrobe, mirror), eat at dining chairs (with food), play the piano (music notes), sunbathe, watch the aquarium, play the arcade. Sofas and armchairs are sittable, and tubs and beds are lie-down.
+- **NPCs everywhere:** the 20 painted NPCs follow daily routes (`NPC_SCHED` in `npc.js`) across the lobby, cafe, restaurant, park, furniture shop, gym, club and the new **Roof Terrace** common area. No NPC is ever in two places at once. Joggers loop the park, and each NPC has a place-specific line when you tap them.
+- Saves migrate once to the new layout. Bought furniture goes back to storage; only the old built-in defaults are dropped.
+- `tools_furn_preview.html#k1,k2` is a dev page that renders FA furniture pieces in all four rotations.
 
 ## v0.3.2 — new default apartment
 - All four tenant flats (Ares, Zayne, Batzz, Ophion) now use one bigger default apartment: 179 floor tiles, up from 120. It has orange walls, glossy cream tiles, a balcony with sliding doors and yellow curtains, a wall AC and a glass front door. A blue-tiled bathroom juts out at the front-right, behind a glass partition with a doorway. The shell is drawn in code (`apt.js`), so walls, the doorway, A* walking and depth sorting all work.

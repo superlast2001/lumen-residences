@@ -73,4 +73,65 @@ const NPCS=[
 ];
 NPCS.forEach((g,i)=>{g.seed=i*1.37+.4;});
 const GYMCAST=NPCS.slice(0,9),CLUBCAST=NPCS.slice(9,18),LOBBYCAST=NPCS.slice(18);
+// ---- v0.3.3: daily routes. Every NPC is somewhere fitting at each hour, never in two places at once (checked by the test script).
+// {n, p:place, h:[from,to) hours (wraps past midnight), t:tile or on:furniture, act (the sprite's own action), roam:wander radius, say:place line}
+const NPC_SCHED=[
+ // ---- Lobby (building common area): deliveries, early readers, residents' friends passing through
+ {n:'Theo',p:'lobby',h:[8,11],t:[5,5],roam:4,say:"Morning! Three parcels for the fourth floor, one smells like cake."},
+ {n:'Theo',p:'fshop',h:[11,14],t:[5,7],roam:3,say:"Delivering a sofa. Well, the receipt for a sofa. The sofa's in the van."},
+ {n:'Theo',p:'lobby',h:[14,23],t:[5,5],roam:4,say:"Last round of the day. Who orders a lamp at 9 PM? Zayne, that's who."},
+ {n:'Elise',p:'lobby',h:[7,10],t:[7,3],flip:1,say:"The lobby's quieter than the library. Don't tell them."},
+ {n:'Elise',p:'cafe',h:[10,14],t:[8,6],flip:1,say:"One oat latte, one chapter. That's the deal I make with myself."},
+ {n:'Elise',p:'park',h:[14,18],t:[4,7],say:"The pond ducks have heard this book three times now."},
+ {n:'Elise',p:'lobby',h:[18,22],t:[7,3],flip:1,say:"Ophion lent me a mystery. I suspect the butler. I always suspect the butler."},
+ {n:'Gus',p:'lobby',h:[7,10],t:[3,6],say:"Water bottle: full. Motivation: also full. Heading to the gym!"},
+ {n:'Zed',p:'lobby',h:[9,13],t:[8,6],flip:1,act:'wave',say:"I don't live here. I just like the lobby lighting. Very knightly."},
+ {n:'Mika',p:'lobby',h:[18,20],t:[4,5],roam:5,act:'run',say:"Cool-down lap of the lobby! The doorman hates it."},
+ // ---- Lumen Gym (open 6 AM – 11 PM)
+ {n:'Mika',p:'gym',h:[6,9],on:'treadmill',oi:0},
+ {n:'Sora',p:'gym',h:[10,22],on:'treadmill',oi:1},
+ {n:'Leon',p:'gym',h:[6,17],t:[7,2],flip:1},
+ {n:'Big Dano',p:'gym',h:[6,23],t:[4,3]},
+ {n:'Bram',p:'gym',h:[6,23],t:[3,6]},
+ {n:'Jett',p:'gym',h:[11,23],t:[1,4]},
+ {n:'Coach Rin',p:'gym',h:[9,18],t:[6,7]},
+ {n:'Priya',p:'gym',h:[8,23],t:[6,5],flip:1},
+ {n:'Gus',p:'gym',h:[10,18],t:[8,8],flip:1},
+ // ---- Cafe Lumière
+ {n:'Dex',p:'cafe',h:[7,13],t:[3,2],say:"Third espresso. I can hear colours now."},
+ {n:'Mei',p:'cafe',h:[10,17],t:[6,6],flip:1,say:"The matcha here is better than the club drinks. Don't tell Zayne."},
+ {n:'Ivy',p:'cafe',h:[8,12],t:[7,4],act:'wave',say:"Croissant and gossip, the perfect breakfast~"},
+ {n:'Sora',p:'cafe',h:[22,23],t:[6,6],flip:1,act:'wave',say:"Post-gym smoothie. I earned this one."},
+ // ---- Restaurant Rosso (lunch + dinner)
+ {n:'Zed',p:'restaurant',h:[13,16],t:[7,3],flip:1,act:'wave',say:"I ordered the knight's platter. They said there isn't one. They made one anyway."},
+ {n:'Amara',p:'restaurant',h:[12,15],t:[3,6],act:'cheer',say:"Lunch with the team! We closed the deal! Tiramisu for everyone!"},
+ {n:'Amara',p:'restaurant',h:[17,20],t:[7,6],flip:1,act:'cheer',say:"Dinner, then dancing. This is the plan. The plan is perfect."},
+ {n:'Nova',p:'restaurant',h:[17,20],t:[7,7],flip:1,act:'wave',say:"Carb-loading before Zayne's set. That's science."},
+ {n:'Rafe',p:'restaurant',h:[19,22],t:[3,3],act:'cheers',say:"A toast! To the chef, to the wine, to the tiramisu!"},
+ {n:'Zed',p:'restaurant',h:[17,20],t:[3,7],act:'wave',say:"Table for one knight, please."},
+ // ---- City Park (joggers loop the paths)
+ {n:'Mika',p:'park',h:[9,12],t:[4,4],roam:5,act:'run',say:"Park loop number three! The ducks are cheering for me. Probably."},
+ {n:'Sora',p:'park',h:[7,10],t:[5,6],roam:5,act:'run',say:"Two laps of the pond, then smoothies."},
+ {n:'Coach Rin',p:'park',h:[6,9],t:[7,5],flip:1,say:"Sunrise stretch class! Reach for the sky, breathe out the week."},
+ {n:'Jett',p:'park',h:[7,11],t:[2,4],say:"Shadow boxing by the pond. The pond is winning."},
+ {n:'Ivy',p:'park',h:[13,18],t:[7,8],flip:1,act:'dance',say:"Practising my moves where nobody's watching. ...You're watching."},
+ {n:'Kai',p:'park',h:[18,20],t:[5,8],act:'wave',say:"Look, the first star! No wait, that's a plane."},
+ // ---- Furniture Shop
+ {n:'Nova',p:'fshop',h:[10,15],t:[6,3],flip:1,act:'wave',say:"I need a velvet sofa. I don't need a velvet sofa. I NEED a velvet sofa."},
+ {n:'Kai',p:'fshop',h:[12,18],t:[2,7],act:'dance',say:"See that chandelier? That's going over my bed. Probably a bad idea."},
+ {n:'Leon',p:'fshop',h:[17,21],t:[7,7],flip:1,say:"They said this bench holds 300 kg. I'm testing that claim."},
+ // ---- Roof Terrace (building common area): sunbeds, BBQ, skyline
+ {n:'Priya',p:'roof',h:[6,8],t:[5,6],say:"Kettlebell swings with a view. Best gym in the city."},
+ {n:'Dex',p:'roof',h:[13,17],t:[3,4],say:"Coffee tastes better ten floors up. That's just maths."},
+ {n:'Rafe',p:'roof',h:[15,19],t:[7,3],flip:1,act:'cheers',say:"Sunset cocktail on the roof! The barman is me. I'm the barman."},
+ {n:'Luz',p:'roof',h:[16,20],t:[4,6],act:'cheer',say:"Golden hour! Everyone look gorgeous, I'm taking photos!"},
+ {n:'Coach Rin',p:'roof',h:[18,22],t:[6,7],flip:1,say:"Evening yoga on the roof. Stretch toward the skyline."},
+ {n:'Gus',p:'roof',h:[18,23],t:[2,7],say:"BBQ's going! I brought veggie skewers. And sausages. Mostly sausages."},
+ {n:'Mei',p:'roof',h:[17,21],t:[8,6],flip:1,say:"I come up here to watch the city lights switch on, one by one."},
+ // ---- Night Club Neon (9 PM – 3 AM, Zayne DJs)
+ {n:'Nova',p:'club',h:[20,4],t:[4,4]},{n:'Kai',p:'club',h:[20,4],t:[6,4]},{n:'Luz',p:'club',h:[20,4],t:[5,6]},{n:'Ivy',p:'club',h:[20,4],t:[3,6]},
+ {n:'Zed',p:'club',h:[20,4],t:[4,6]},{n:'Amara',p:'club',h:[20,4],t:[6,7],flip:1},{n:'Rafe',p:'club',h:[22,4],t:[7,5],flip:1},{n:'Dex',p:'club',h:[21,4],t:[7,2],flip:1},{n:'Mei',p:'club',h:[21,4],t:[8,3],flip:1}];
+const inHrs=(h,[a,b])=>a<b?h>=a&&h<b:(h>=a||h<b);
+const npcCast=(p,h)=>NPC_SCHED.filter(s=>s.p==p&&inHrs(h,s.h));
+
 npcPreload();

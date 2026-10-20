@@ -13,6 +13,7 @@ button{font:inherit;cursor:pointer}
 #view{position:relative;flex:0 0 62%;overflow:hidden;background:#120c18}
 #c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 /* HUD (Ero Condo style top bar) */
+#zoom{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px;z-index:3}#zoom button{width:34px;height:34px;border-radius:10px;border:2px solid #30263f;background:linear-gradient(#ffffff,#efe4d2);font:900 20px system-ui;color:#30263f;box-shadow:0 2px 0 #30263f;padding:0;line-height:1}#zoom button:disabled{opacity:.45}
 #hud{position:absolute;left:8px;right:8px;top:calc(env(safe-area-inset-top) + 8px);display:flex;gap:6px;align-items:flex-start;pointer-events:none;z-index:3}
 .hcol{display:flex;flex-direction:column;gap:5px}
 #day{background:repeating-linear-gradient(130deg,#30263f 0 13px,#49384f 13px 25px);color:#ffe36b;border:2px solid #f7bb35;border-radius:7px;padding:4px 9px;font-weight:900;font-size:12px;letter-spacing:.5px;box-shadow:0 2px 0 #30263f;white-space:nowrap}
@@ -63,6 +64,11 @@ button{font:inherit;cursor:pointer}
 .mbtn[disabled]{opacity:.5}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .tabs{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}.tab{border:2px solid #30263f;border-radius:16px;background:#fff;padding:4px 10px;font-weight:900;font-size:12px}.tab.on{background:#30263f;color:#ffe36b}
+.tab.lux{background:linear-gradient(#2a1a1e,#120a0c);color:#f5cf6a;border-color:#c9a03a}.tab.lux.on{background:linear-gradient(#ffe38a,#c99a2e);color:#3a1410}
+.luxban{background:linear-gradient(135deg,#1c1012,#3a1416 60%,#1c1012);color:#f3dfb0;border:2px solid #c9a03a;border-radius:12px;padding:8px 10px;margin:6px 0 8px;font-size:11px;line-height:1.35}.luxban b{display:block;color:#ffd86a;font-size:12px;letter-spacing:.6px;margin-bottom:2px}
+.item{position:relative}.tier{position:absolute;left:4px;top:4px;font-size:8.5px;font-weight:900;padding:1px 5px;border-radius:7px;letter-spacing:.3px;background:#eee;color:#555}
+.tier.tB{background:#e6efe2;color:#3e7a3a}.tier.tS{background:#e2ecf8;color:#2f5f9a}.tier.tP{background:#f1e4fb;color:#7a3aa8}.tier.tL{background:linear-gradient(#ffe38a,#d9a43a);color:#3a1410}
+.item.luxi{background:linear-gradient(#2a1a1e,#170d10)!important;border-color:#c9a03a!important;color:#f3dfb0}.item.luxi .pr{color:#ffd86a}
 .item{position:relative;border:2px solid #30263f;border-radius:11px;background:linear-gradient(#fff,#f1e6d6);padding:6px 4px 5px;text-align:center;font-size:11px;font-weight:800;box-shadow:0 3px 0 #30263f;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px}
 .item img{max-width:88%;max-height:70px;object-fit:contain;flex:1;min-height:0;image-rendering:auto}
 .item .pr{color:#1a7a2a;font-weight:1000}.item .own{position:absolute;top:3px;right:5px;background:#30263f;color:#ffe36b;border-radius:9px;padding:0 6px;font-size:10px}
@@ -160,6 +166,7 @@ button{font:inherit;cursor:pointer}
   <div id="floors"><div class="skyline"></div><div class="cloud" style="top:8%;left:6%"></div><div class="cloud" style="top:22%;right:4%;transform:scale(.8)"></div><div id="fworld"></div>
    <button id="findBtn">FIND NEW<br>RESIDENT<small>♥ 30</small></button><div id="fhint">▲▼ floors · ◀▶ rooms · OK to enter</div></div>
   <div id="hud"><div class="hcol"><div id="day">DAY 1 · 8:00 AM</div><div style="display:flex;gap:5px"><span class="pill" id="money">£0</span><span class="pill"><span class="hrt">♥</span><span id="hearts">0</span></span></div></div><div id="loc">LOBBY</div></div>
+  <div id="zoom"><button id="zIn" aria-label="Zoom in">+</button><button id="zOut" aria-label="Zoom out" disabled>−</button></div>
   <div id="toasts"></div>
  </div>
  <div id="panel">
@@ -175,9 +182,10 @@ button{font:inherit;cursor:pointer}
 <div id="stamp"></div>
 <div id="dlg"><canvas id="dlgPortrait" width="420" height="520"></canvas><div id="dlgBox"><canvas id="dlgFace"></canvas><div id="dlgName">NAME</div><div id="dlgText"></div><button class="dbt" id="dlgSkip">Skip&gt;&gt;</button><button class="dbt" id="dlgHide">Hide</button><button class="dbt" id="dlgNext">Next &gt;</button></div></div>
 <div id="dbgov"></div>
-<script src="data.js?v=0.3.2"></script>
-<script src="npc.js?v=0.3.2"></script>
-<script src="furnart.js?v=0.3.2"></script><script src="world.js?v=0.3.2"></script><script src="apt.js?v=0.3.2"></script>
-<script src="game.js?v=0.3.2"></script>
+<script src="data.js?v=0.3.3"></script>
+<script src="npc.js?v=0.3.3"></script>
+<script src="furnart.js?v=0.3.3"></script>
+<script src="furnart2.js?v=0.3.3"></script><script src="world.js?v=0.3.3"></script><script src="apt.js?v=0.3.3"></script>
+<script src="game.js?v=0.3.3"></script>
 </body>
 </html>

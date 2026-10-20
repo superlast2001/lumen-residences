@@ -1,7 +1,7 @@
 'use strict';
 // Lumen Residences — engine. Kairosoft-style portrait layout (game view on top, D-pad panel below),
 // Ero-Condo-style tenant loop. Dialogue system, dev panel, save and sfx follow Fantasy Town v0.0.2.3.
-const VERSION='v0.3.2',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
+const VERSION='v0.3.3',SAVE='lumen_res_v2',SLOT='lumen_res_slot1';
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d');
 const DPR=()=>Math.min(3,window.devicePixelRatio||1);
@@ -25,13 +25,17 @@ if(TENANTS.Ophion)[...OPH_SHOWER,...OPH_AFTER].forEach(f=>tImg('Ophion','shower_
 
 // ---------------- state ----------------
 let S;
-function newState(){const s={v:2,roomV:ROOM_STYLE=='themed'?1:2,day:1,min:8*60,money:200,hearts:30,unlocked:['Ares'],scene:'lobby',rel:{},rooms:{},inv:{},bag:{water:2,coffee:1},ring:0,seenHelp:0};
+function newState(){const s={v:2,roomV:ROOM_STYLE=='themed'?1:APT_V,day:1,min:8*60,money:200,hearts:30,unlocked:['Ares'],scene:'lobby',rel:{},rooms:{},inv:{},bag:{water:2,coffee:1},ring:0,seenHelp:0};
  TENANT_ORDER.forEach(n=>{s.rel[n]={p:0,talk:0,fed:0,used:{},day:0,dating:0,engaged:0,married:0,engDay:0};s.rooms[n]={furn:(ROOMS[n].defFurn||[]).map(f=>({r:0,...f})),fridge:n=='Ares'?{steak:1,water:2}:{water:1}};});return s;}
 function load(key=SAVE){try{const j=JSON.parse(localStorage.getItem(key));if(j&&j.v==2){migrateRooms(j);return j;}}catch(e){}return null;}
 // v0.3.2: every apartment moved to the new default shell. Old placements no longer fit its walls, so placed pieces go back to
 // storage (nothing is lost) and each room starts from the default bed + built-in shower + basics.
-function migrateRooms(j){const want=ROOM_STYLE=='themed'?1:2;if((j.roomV||1)==want)return;j.inv=j.inv||{};for(const n of TENANT_ORDER){const r=j.rooms[n];if(!r)continue;
- (r.furn||[]).forEach(f=>{if(FURN[f.k]&&!FURN[f.k].fixed)j.inv[f.k]=(j.inv[f.k]||0)+1;});const def=(ROOMS[n].defFurn||[]);def.forEach(f=>{if(!FURN[f.k].fixed&&j.inv[f.k]>0)j.inv[f.k]--;});r.furn=def.map(f=>({r:0,...f}));}j.roomV=want;}
+// switching room style (or growing the default flat) hands every tenant the new furnished layout. Everything the player had bought
+// and placed goes back into storage (inventory); only the old built-in defaults are dropped, so nothing bought is ever lost.
+function migrateRooms(j){const want=ROOM_STYLE=='themed'?1:APT_V,had=j.roomV||1;if(had==want)return;j.inv=j.inv||{};for(const n of TENANT_ORDER){const r=j.rooms[n];if(!r)continue;
+ const back={};(r.furn||[]).forEach(f=>{if(FURN[f.k]&&!FURN[f.k].fixed&&!f.fixed)back[f.k]=(back[f.k]||0)+1;});
+ const oldDef=had==1?((ROOMS_THEMED[n]||{}).defFurn||[]).map(f=>f.k):had==2?APT_V2_DEF:[];oldDef.forEach(k=>{if(back[k]>0)back[k]--;});
+ for(const k in back)if(back[k]>0)j.inv[k]=(j.inv[k]||0)+back[k];r.furn=(ROOMS[n].defFurn||[]).map(f=>({r:0,...f}));}j.roomV=want;}
 function save(quiet,key=SAVE){try{localStorage.setItem(key,JSON.stringify(S));if(!quiet)toast('Game saved');}catch(e){}}
 S=load()||newState();
 
@@ -74,10 +78,16 @@ function sceneInfo(id=S.scene){if(id.startsWith('room:')){const n=id.slice(5),Rm
  const p=id=='lobby'?'lobby':id.slice(6);if(!PLACES[p])return sceneInfo('lobby');return{kind:'place',p,W:1000,H:760,ch:122,title:PLACES[p].n,P:PLACES[p]};}
 let SC=null;
 function setScene(id){SC=sceneInfo(id);SC.G=buildGrid(SC);rebuildOcc(SC.G,sceneFurn());}
-const cam={x:500,y:400,z:1},cur={x:500,y:420};
+const cam={x:500,y:400,z:1,zf:1},cur={x:500,y:420};
 function viewSize(){return[cv.width/DPR(),cv.height/DPR()];}
-function fitZoom(){const [vw,vh]=viewSize();if(SC.kind=='room')return Math.max(vh/SC.H,vw/SC.W,SC.R.z||0,SC.R.type=='tile'?.5:0);return Math.max(vh/(SC.H-40),vw/SC.W);}
-function clampCam(){const [vw,vh]=viewSize(),z=cam.z,hw=vw/2/z,hh=vh/2/z;cam.x=SC.W<=hw*2?SC.W/2:clamp(cam.x,hw,SC.W-hw);const top=SC.kind=='place'?40:0;cam.y=SC.H-top<=hh*2?(SC.H+top)/2:clamp(cam.y,hh+top,SC.H-hh);}
+// default zoom: the whole default flat (front door included) fits the phone view; + / − buttons, pinch and the mouse wheel zoom in up to 3.2x
+function baseZoom(){const [vw,vh]=viewSize();if(SC.kind=='room'){if(SC.R.style=='apt'){const B=aptBox();return Math.min(vw/(B.x1-B.x0),(vh-70)/(B.y1-B.y0));}return Math.max(vh/SC.H,vw/SC.W,SC.R.z||0,SC.R.type=='tile'?.5:0);}return Math.max(vh/(SC.H-40),vw/SC.W);}
+// screen box of the default flat (floor + back walls): the cut-away shape leaves empty corners in the scene rect, so fit to this instead
+let _abx=null;function aptBox(){if(_abx&&_abx.G===SC.G&&_abx.W==SC.W)return _abx.b;const b=aptBox0();_abx={G:SC.G,W:SC.W,b};return b;}
+function aptBox0(){const G=SC.G,R=SC.R;let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(let u=0;u<G.cols;u++)for(let v=0;v<G.rows;v++)if(G.floor(u,v))tileQuad(G,u,v).forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y-R.WH-8);y1=Math.max(y1,y+36);});return{x0:x0-14,x1:x1+14,y0,y1,cx:(x0+x1)/2,cy:(y0+y1)/2};}
+function fitZoom(){return baseZoom()*(cam.zf||1);}
+function setZoom(f,keep){cam.zf=clamp(f,1,3.2);cam.z=fitZoom();if(!keep&&cam.zf>1.01){cam.x=cur.x;cam.y=cur.y;}clampCam();const b=$('zOut');if(b)b.disabled=cam.zf<=1.01;}
+function clampCam(){const [vw,vh]=viewSize(),z=cam.z,hw=vw/2/z,hh=vh/2/z;if(SC.kind=='room'&&SC.R.style=='apt'&&(cam.zf||1)<=1.01){const B=aptBox();cam.x=B.cx;cam.y=B.cy-30/z;return;}cam.x=SC.W<=hw*2?SC.W/2:clamp(cam.x,hw,SC.W-hw);const top=SC.kind=='place'?40:0;cam.y=SC.H-top<=hh*2?(SC.H+top)/2:clamp(cam.y,hh+top,SC.H-hh);}
 const W2S=(x,y)=>{const [vw,vh]=viewSize();return[(x-cam.x)*cam.z+vw/2,(y-cam.y)*cam.z+vh/2];};
 const S2W=(sx,sy)=>{const [vw,vh]=viewSize();return[(sx-vw/2)/cam.z+cam.x,(sy-vh/2)/cam.z+cam.y];};
 function inDiamond(x,y,m=0){const {T,R,B,L}=DIA;const cx=T[0],cy=L[1],hw=(R[0]-L[0])/2-m,hh=(B[1]-T[1])/2-m*.5;return Math.abs(x-cx)/hw+Math.abs(y-cy)/hh<=1;}
@@ -107,7 +117,12 @@ function wallQuad(g,s,u0,u1,h0,h1){poly(g,[wallPt(s,u0,h0),wallPt(s,u1,h0),wallP
 function skyGrad(g,y0,y1){const n=nightF(),gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,n>.5?'#1b2350':'#74c6ff');gr.addColorStop(1,n>.5?'#5a3f7a':'#d8efff');return gr;}
 let PG=null;const placeGrid=()=>PG||(PG=buildGrid({kind:'place',P:{}}));
 function drawPlace(g,p,time){const P=PLACES[p],{T,R,B,L}=DIA,n=nightF();
- if(P.outdoor){g.fillStyle=skyGrad(g,0,420);g.fillRect(-400,-200,1800,1200);
+ if(P.roof){// v0.3.3 roof terrace: skyline all round, decking, glass railing with string lights, the stair hut
+  g.fillStyle=skyGrad(g,0,420);g.fillRect(-400,-200,1800,1200);
+  for(let i=0;i<16;i++){const x=-80+i*72,h=150+((i*61)%170),w=54+((i*13)%20);g.fillStyle=n>.5?(i%2?'#2c2850':'#34305c'):(i%2?'#b8cfe4':'#a6c0da');g.fillRect(x,360-h,w,h+80);
+   g.fillStyle=n>.5?'rgba(255,226,140,.85)':'rgba(255,255,255,.55)';for(let r=0;r<h/22-1;r++)for(let q=0;q<3;q++)if(((i*7+r*3+q)%5)!=0)g.fillRect(x+8+q*(w-16)/3,370-h+r*22,8,10);}
+  g.fillStyle=n>.5?'#1e1a38':'#c9d6e2';g.fillRect(-400,350,1800,900);}
+ else if(P.outdoor){g.fillStyle=skyGrad(g,0,420);g.fillRect(-400,-200,1800,1200);
   // distant city + tree line
   g.fillStyle=n>.5?'#3a3560':'#a9c6e0';for(let i=0;i<14;i++){const x=-60+i*80,h=60+((i*53)%90);g.fillRect(x,300-h,58,h+40);}
   g.fillStyle=n>.5?'#22402a':'#4a9b4c';for(let i=0;i<20;i++){g.beginPath();g.arc(-40+i*58,330+Math.sin(i*1.7)*10,46+((i*37)%20),0,7);g.fill();}
@@ -135,13 +150,24 @@ function drawPlace(g,p,time){const P=PLACES[p],{T,R,B,L}=DIA,n=nightF();
    const ind=wallPt('R',.62,176);g.fillStyle='#28223a';g.beginPath();g.ellipse(ind[0],ind[1],22,12,0,0,7);g.fill();g.fillStyle='#ffd85d';g.font='900 13px system-ui';g.textAlign='center';g.fillText('▲▼',ind[0],ind[1]+5);}
   if(P.neon){const hue=(time*40)%360;g.save();g.lineWidth=5;g.shadowBlur=16;[[L,T],[T,R]].forEach(([a,b],i)=>{g.strokeStyle=g.shadowColor=`hsl(${(hue+i*120)%360},100%,65%)`;g.beginPath();g.moveTo(a[0],a[1]-WALLH+14);g.lineTo(b[0],b[1]-WALLH+14);g.stroke();});g.restore();}}
   // floor: the furniture sheet's floor texture mapped onto the tile grid (grass outdoors), LED tiles on the club dance floor
- const N=10,PGd=placeGrid();if(P.outdoor){for(let i=0;i<N;i++)for(let j=0;j<N;j++){poly(g,tileQuad(PGd,i,j));g.fillStyle=(i+j)%2?'#7cc46a':'#72ba60';g.fill();}}
+ const N=10,PGd=placeGrid();if(P.roof){for(let i=0;i<N;i++)for(let j=0;j<N;j++){poly(g,tileQuad(PGd,i,j));g.fillStyle=(i*3+j*7)%4?'#c9a27a':'#bf9670';g.fill();g.strokeStyle='rgba(90,60,35,.45)';g.lineWidth=1.4;for(let k=1;k<4;k++){g.beginPath();g.moveTo(...PGd.pt(i+k/4,j));g.lineTo(...PGd.pt(i+k/4,j+1));g.stroke();}}}
+ else if(P.outdoor){for(let i=0;i<N;i++)for(let j=0;j<N;j++){poly(g,tileQuad(PGd,i,j));g.fillStyle=(i+j)%2?'#7cc46a':'#72ba60';g.fill();}}
  else{const pat=patFor(g,PGd,P.tex||'t01');poly(g,[T,R,B,L]);g.fillStyle=pat||P.wall[1];g.fill();
   if(P.dance){const [a,b,w,h]=P.dance;for(let i=a;i<a+w;i++)for(let j=b;j<b+h;j++){poly(g,tileQuad(PGd,i+.04,j+.04,.92,.92));g.fillStyle=`hsla(${(time*60+(i+j)*40)%360},90%,${(i+j)%2?52:38}%,.85)`;g.fill();}
    g.save();g.globalCompositeOperation='lighter';const c=PGd.pt(a+w/2,b+h/2),gr=g.createRadialGradient(c[0],c[1],10,c[0],c[1],260);gr.addColorStop(0,`hsla(${(time*60)%360},100%,60%,.28)`);gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.beginPath();g.ellipse(c[0],c[1],260,140,0,0,7);g.fill();g.restore();}}
  g.strokeStyle='rgba(0,0,0,.10)';g.lineWidth=1.2;for(let i=0;i<=N;i++){let a=diaPt(i/N,0),b=diaPt(i/N,1);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();a=diaPt(0,i/N);b=diaPt(1,i/N);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();}
  const fg=g.createRadialGradient(500,395,40,500,395,470);fg.addColorStop(0,'rgba(255,255,255,.10)');fg.addColorStop(1,'rgba(0,0,0,.22)');g.fillStyle=fg;poly(g,[T,R,B,L]);g.fill();
- if(P.outdoor){// path + pond
+ if(P.roof){// glass railing on the two back edges, warm string lights, and the stairwell hut with the way down
+  for(const s of ['L','R']){wallQuad(g,s,0,1,0,54);g.fillStyle=n>.5?'rgba(160,190,230,.22)':'rgba(225,242,255,.42)';g.fill();
+   g.strokeStyle='#5c5a64';g.lineWidth=3;for(let u=0;u<=1.001;u+=.1){const a=wallPt(s,u,0),b=wallPt(s,u,58);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();}
+   g.lineWidth=5;g.strokeStyle='#8c8a94';const a=wallPt(s,0,58),b=wallPt(s,1,58);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();
+   g.lineWidth=1.5;g.strokeStyle='#3a3840';for(let k=0;k<5;k++){const u0=k*.2,u1=u0+.2,a=wallPt(s,u0,96),b=wallPt(s,u1,96),m=wallPt(s,u0+.1,80);g.beginPath();g.moveTo(...a);g.quadraticCurveTo(m[0],m[1],b[0],b[1]);g.stroke();
+    for(let q=1;q<6;q++){const tt=q/6,x=(1-tt)*(1-tt)*a[0]+2*(1-tt)*tt*m[0]+tt*tt*b[0],y=(1-tt)*(1-tt)*a[1]+2*(1-tt)*tt*m[1]+tt*tt*b[1];g.fillStyle=n>.3?'#ffe08a':'#fff4c8';if(n>.3){g.save();g.shadowColor='#ffcf60';g.shadowBlur=10;}g.beginPath();g.arc(x,y+3,3.2,0,7);g.fill();if(n>.3)g.restore();}}
+   for(let u=0;u<=1.001;u+=.2){const a=wallPt(s,u,0),b=wallPt(s,u,100);g.strokeStyle='#4b4a52';g.lineWidth=3;g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();}}
+  wallQuad(g,'L',.04,.3,0,176);g.fillStyle='#e6e1d8';g.fill();g.strokeStyle='#5c5a64';g.lineWidth=2;g.stroke();wallQuad(g,'L',.095,.245,0,140);const dg=g.createLinearGradient(...wallPt('L',.1,0),...wallPt('L',.24,0));dg.addColorStop(0,'#bfe6ff');dg.addColorStop(.5,'#f2fbff');dg.addColorStop(1,'#8cc8ee');g.fillStyle=dg;g.fill();
+  g.strokeStyle='#5c5a64';g.lineWidth=3;const dm0=wallPt('L',.17,0),dm1=wallPt('L',.17,140);g.beginPath();g.moveTo(...dm0);g.lineTo(...dm1);g.stroke();
+  wallQuad(g,'L',.11,.23,150,170);g.fillStyle='#1d6a3a';g.fill();g.save();const ex=wallPt('L',.17,155);g.translate(ex[0],ex[1]);g.transform(1,-.5,0,1,0,0);g.fillStyle='#fff';g.font='900 14px system-ui';g.textAlign='center';g.fillText('EXIT',0,0);g.restore();}
+ else if(P.outdoor){// path + pond
   g.fillStyle='#cbb48a';poly(g,[diaPt(.42,0),diaPt(.58,0),diaPt(.58,1),diaPt(.42,1)]);g.fill();poly(g,[diaPt(0,.44),diaPt(1,.44),diaPt(1,.56),diaPt(0,.56)]);g.fill();
   const pc=diaPt(.75,.25);const pg=g.createRadialGradient(pc[0],pc[1],10,pc[0],pc[1],120);pg.addColorStop(0,'#9fe0ff');pg.addColorStop(1,'#3a8ad0');g.fillStyle=pg;g.beginPath();g.ellipse(pc[0],pc[1],120,55,0,0,7);g.fill();g.strokeStyle='#e8ddc0';g.lineWidth=6;g.stroke();}
  if(P.neon){// moving spotlights
@@ -149,7 +175,7 @@ function drawPlace(g,p,time){const P=PLACES[p],{T,R,B,L}=DIA,n=nightF();
    const gr=g.createLinearGradient(src[0],src[1],c[0],c[1]);gr.addColorStop(0,col+'00');gr.addColorStop(1,col+'40');g.fillStyle=gr;g.beginPath();g.moveTo(src[0]-6,src[1]);g.lineTo(src[0]+6,src[1]);g.lineTo(c[0]+60,c[1]);g.lineTo(c[0]-60,c[1]);g.closePath();g.fill();
    g.fillStyle=col+'38';g.beginPath();g.ellipse(c[0],c[1],62,30,0,0,7);g.fill();}g.restore();}
  // floor edge
- g.fillStyle=P.outdoor?'#5a8a3a':shade(P.wall[1],-.45);poly(g,[L,B,[B[0],B[1]+18],[L[0],L[1]+18]]);g.fill();g.fillStyle=P.outdoor?'#4a7a2e':shade(P.wall[1],-.6);poly(g,[B,R,[R[0],R[1]+18],[B[0],B[1]+18]]);g.fill();}
+ g.fillStyle=P.roof?'#9a98a2':P.outdoor?'#5a8a3a':shade(P.wall[1],-.45);poly(g,[L,B,[B[0],B[1]+18],[L[0],L[1]+18]]);g.fill();g.fillStyle=P.roof?'#84828c':P.outdoor?'#4a7a2e':shade(P.wall[1],-.6);poly(g,[B,R,[R[0],R[1]+18],[B[0],B[1]+18]]);g.fill();}
 function hotPos(h){const P=SC.P,G=SC.G;if(h.kind=='exit')return G.tc(...P.entry.t);if(h.id=='elevator')return G.tc(...P.elev.t);return G.tc(...h.t);}
 
 // ---------------- targets (what the cursor / a tap can select) ----------------
@@ -163,7 +189,7 @@ function targets(){const L=[],G=SC.G;for(const n in TN){const t=TN[n];if(t.alpha
  if(SC.kind=='room'){const n=SC.n,Rm=SC.R;
   (Rm.spots||[]).forEach(s=>{const [x,y]=G.pt(...(s.at||[s.t[0]+.5,s.t[1]+.5]));L.push({type:'spot',s,x,y:y-24,act:s.act,label:s.n});});
   S.rooms[n].furn.forEach((f,i)=>{const [x,y]=furnTop(f);L.push({type:'furn',i,f,x,y,act:furnAct(f.k),label:furnName(f.k)});});
-  TENANTS[n].zones.forEach(z=>{const p=G.pt(...Rm.zoneLabel[z.id]);L.push({type:'zone',z:z.id,x:p[0],y:p[1]+14,label:z.id+' zone'});});}
+  /* v0.3.3: zone ratings live only in the MENU tenant profile now: nothing is drawn or targeted on the floor */}
  else{const P=SC.P;P.hot.forEach(h=>{const [x,y]=hotPos(h);L.push({type:'hot',h,x,y,label:h.n});});
   P.props.forEach((f,i)=>{const a=furnAct(f.k);if(!a&&SC.p!='fshop')return;const [x,y]=furnTop(f);L.push({type:'prop',i,f,x,y,act:a,label:furnName(f.k)});});
   EX.forEach(e=>L.push({type:'npc',e,x:e.x,y:e.y-SC.ch*.4,label:e.c.n}));}
@@ -183,7 +209,7 @@ function drawWorld(g,time){const [vw,vh]=viewSize(),G=SC.G;g.save();g.translate(
   g.beginPath();g.moveTo(0,-ry);g.lineTo(rx,0);g.lineTo(0,ry);g.lineTo(-rx,0);g.closePath();g.stroke();g.fillStyle='rgba(255,236,140,.18)';g.fill();g.restore();}
  // depth-sorted entities (iso depth = u+v)
  const E=[],list=sceneFurn(),df=decorF();
- list.forEach((f,i)=>{if(decor&&decor.from===f)return;const hl=hover&&(hover.type=='furn'||hover.type=='prop')&&hover.f===f;E.push({depth:FDEF[f.k]&&FDEF[f.k].flat?-1:fBase(G,f).depth,d:()=>drawFurn(g,G,f,null,hl,time)});});
+ list.forEach((f,i)=>{if(decor&&decor.from===f)return;const hl=hover&&(hover.type=='furn'||hover.type=='prop')&&hover.f===f;const D0=FDEF[f.k]||{};E.push({depth:D0.hang?1e4+fBase(G,f).depth:D0.flat?-1:fBase(G,f).depth,d:()=>drawFurn(g,G,f,null,hl,time)});});
  if(SC.kind=='room'&&SC.R.type=='tile')(SC.R.style=='apt'?aptWalls(G,SC.R):lowWalls(G,SC.R,SC.R.theme)).forEach(w=>E.push({depth:w.depth,d:()=>w.d(g)}));
  for(const n in TN){const t=TN[n];E.push({depth:tDepth(t),d:()=>drawChibiT(g,t,time,(hover&&hover.type=='tenant'&&hover.n==n)||sel==n)});}
  for(const n in TN){const t=TN[n],U=t.U;if(t.state=='use'&&U&&U.f&&U.pose=='fridge'){const el=(t.useDur||6)-t.useT,k=Math.min(1,el/.4,Math.max(0,t.useT-.2)/.4);E.push({depth:fBase(G,U.f).depth+.3,d:()=>drawFridgeDoor(g,G,U.f,k)});}}
@@ -199,7 +225,7 @@ function plate(g,x,y,txt,stars,col){g.save();g.font='900 12px system-ui';const w
  g.fillStyle='rgba(26,20,38,.86)';g.strokeStyle=col||'#ffe16a';g.lineWidth=2;g.beginPath();g.roundRect(x-w/2,y-h/2,w,h,7);g.fill();g.stroke();g.fillStyle='#fff';g.textAlign='center';g.fillText(txt,x,y+(stars!=null?-3:4));
  if(stars!=null){g.font='12px system-ui';for(let i=0;i<5;i++){g.fillStyle=i<stars?'#ffd23a':'#5a5470';g.fillText('★',x-28+i*14,y+12);}}g.restore();}
 function drawOverlay(g,time){const [vw,vh]=viewSize();
- if(SC.kind=='room'){const n=SC.n;TENANTS[n].zones.forEach(z=>{const [sx,sy]=W2S(...SC.G.pt(...SC.R.zoneLabel[z.id]));plate(g,sx,sy,z.id,zoneLv(n,z.id),TENANTS[n].color);});
+ if(SC.kind=='room'){const n=SC.n;
   if(!TN[n]&&S.unlocked.includes(n)){const p=placeOf(n);plate(g,vw/2,vh-46,`${n} is out · ${PLACE_N[p]} until ${fmtH(untilOf(n))}`,null,'#48eaff');}}
  else SC.P.hot.forEach(h=>{const [x,y]=W2S(...hotPos(h));plate(g,x,y+16,h.n,null,h.kind=='exit'?'#5ad07a':'#ffe16a');});
  if(hover){const [x,y]=W2S(hover.x,hover.y),b=Math.sin(time*6)*4,yy=y-(hover.type=='tenant'?SC.ch*.62*cam.z:30)+b;g.save();g.fillStyle='#ffe16a';g.strokeStyle='#30263f';g.lineWidth=2;g.beginPath();g.moveTo(x-9,yy-12);g.lineTo(x+9,yy-12);g.lineTo(x,yy);g.closePath();g.fill();g.stroke();g.restore();
@@ -207,7 +233,7 @@ function drawOverlay(g,time){const [vw,vh]=viewSize();
 function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;resize();update(dt);const d=DPR();ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,cv.width,cv.height);const time=now/1000;
  drawWorld(ctx,time);drawOverlay(ctx,time);requestAnimationFrame(frame);}
 let hudT=0,infoKey='',exOpen=null;
-function exTick(){if(SC.kind!='place'||!SC.P.extras)return;const h=hour(),o=SC.p=='gym'?(h>=6&&h<23):SC.p=='club'?(h>=20||h<4):true;if(o!==exOpen){exOpen=o;rebuildOcc(SC.G,sceneFurn());spawnExtras();}}
+function exTick(){if(SC.kind!='place')return;const h=hour(),open=SC.p=='gym'?(h>=6&&h<23):SC.p=='club'?(h>=20||h<4):true,o=open?npcCast(SC.p,h).map(s=>s.n).join(','):'';if(o!==exOpen){exOpen=o;rebuildOcc(SC.G,sceneFurn());spawnExtras();}}
 function update(dt){const paused=dlg.on||sheetOpen()||$('stamp').classList.contains('open');
  if(!paused){tickTime(dt*1.5);tickNeeds(dt*1.5);syncTenants();exTick();}
  if(dlg.on){const l=dlg.lines[dlg.i];if(dlg.ch<l.t.length){dlg.ch=Math.min(l.t.length,dlg.ch+dt*45);$('dlgText').textContent=l.t.slice(0,Math.floor(dlg.ch));}}
@@ -258,7 +284,7 @@ $('dlg').onclick=()=>{if(dlg.hidden){dlg.hidden=false;$('dlgBox').style.visibili
 addEventListener('resize',()=>{if(dlg.on)layoutCG();});
 
 // ---------------- scenes: enter / floor picker / teleport ----------------
-function enterScene(id,quiet){if(decor)cancelDecor();setScene(id);S.scene=id;TN={};EX=[];exOpen=null;hover=null;sel=null;syncTenants(true);exTick();cam.z=fitZoom();
+function enterScene(id,quiet){if(decor)cancelDecor();setScene(id);S.scene=id;TN={};EX=[];exOpen=null;hover=null;sel=null;syncTenants(true);exTick();cam.zf=1;cam.z=fitZoom();{const b=$('zOut');if(b)b.disabled=true;}
  if(SC.kind=='room'){const t=TN[SC.n],G=SC.G;if(t){[cur.x,cur.y]=G.tc(t.u,t.v);}else{const E=SC.R.entry;[cur.x,cur.y]=SC.R.type=='tile'?G.pt(SC.R.cols/2,SC.R.rows/2):G.tc(...E.t);}}else{cur.x=500;cur.y=430;}
  cam.x=cur.x;cam.y=cur.y-SC.ch*.3;clampCam();closeFloors();closeSheet();save(1);updateHud();infoKey='';if(!quiet)toast(SC.kind=='room'?SC.R.name:SC.title);sfx(660);
  if(SC.kind=='room'&&TN[SC.n]&&R(SC.n).talk==0)setTimeout(()=>emote(SC.n,'happy'),500);}
@@ -306,7 +332,7 @@ function hotAct(h){const pr=Object.keys(TN).filter(n=>!TN[n].leaving);
 function actOn(t){if(!t){toast('Move the cursor onto a resident, furniture or a door, then press OK');return;}
  if(t.type=='tenant'){sel=t.n;openProfile(t.n);}else if(t.type=='zone')zoneInfo(SC.n,t.z);else if(t.type=='hot')hotAct(t.h);else useThing(t);}
 const ACT_LINES={shower:'bath',wash:'bath',dj:'read',fridge:'cook',coach:'lift'};
-function useThing(t){if(t.type=='npc'){const e=t.e;sfx(700);toast(`${e.c.n}: "${e.c.talk||'Hey!'}"`);return;}
+function useThing(t){if(t.type=='npc'){const e=t.e;sfx(700);toast(`${e.c.n}: "${(e.s&&e.s.say)||e.c.talk||'Hey!'}"`);return;}
  if(t.act=='fridge'&&SC.kind=='room')return openFridge(SC.n);if(!t.act){toast(`${t.label} · decoration`);return;}
  const n=SC.kind=='room'?(TN[SC.n]&&!TN[SC.n].leaving?SC.n:null):talkTarget();
  if(!n){toast(SC.kind=='room'?`${SC.n} is out right now — come back later`:'No resident here to use it with');sfx(180);return;}
@@ -358,9 +384,9 @@ function foodShop(p){const list=SHOP_FOOD[p]||SHOP_FOOD.cafe;openSheet(`<h3>${PL
  list.map(k=>`<button class="item" onclick="buyFood('${k}','${p}')"><span class="own">${S.bag[k]||0}</span><img src="${foodImg(k).src}"><span>${FOOD[k].n}</span><span class="pr">${money(FOOD[k].p)}</span></button>`).join('')+`</div>`);}
 function buyFood(k,p){if(S.money<FOOD[k].p){toast('Not enough money');sfx(180);return;}S.money-=FOOD[k].p;S.bag[k]=(S.bag[k]||0)+1;sfx(900);toast(`Bought ${FOOD[k].n}`);save(1);foodShop(p);updateHud();}
 let shopCat='Gym';
-function openShop(cat){if(cat)shopCat=cat;const ks=Object.keys(FURN).filter(k=>FURN[k].cat==shopCat&&!FURN[k].noshop);
- openSheet(`<h3>FURNITURE SHOP</h3><p>Paid from rent money · you have <b>${money(S.money)}</b>. Bought items go to storage; place them with MENU → Decorate.</p><div class="tabs">${FURN_CATS.map(c=>`<button class="tab${c==shopCat?' on':''}" onclick="openShop('${c}')">${c}</button>`).join('')}</div><div class="grid3">`+
- ks.map(k=>{const F=FURN[k],own=k=='ring'?S.ring:(S.inv[k]||0);return`<button class="item" onclick="buy('${k}')"><span class="own">${own}</span><img src="${k=='ring'?RING:furnThumb(k)}"><span>${F.n}</span><span class="pr">${money(F.p)}</span>${F.act?`<small style="font-size:9px;color:#6a5a72">use: ${F.act}</small>`:''}</button>`;}).join('')+`</div>`);}
+function openShop(cat){if(cat)shopCat=cat;const ks=Object.keys(FURN).filter(k=>FURN[k].cat==shopCat&&!FURN[k].noshop).sort((a,b)=>FURN[a].p-FURN[b].p);const lux=shopCat=='Luxury';
+ openSheet(`<h3>FURNITURE SHOP</h3><p>Paid from rent money · you have <b>${money(S.money)}</b>. Bought items go to storage; place them with MENU → Decorate.</p><div class="tabs">${FURN_CATS.map(c=>`<button class="tab${c==shopCat?' on':''}${c=='Luxury'?' lux':''}" onclick="openShop('${c}')">${c=='Luxury'?'✦ ':''}${c}</button>`).join('')}</div>${lux?`<div class="luxban"><b>✦ THE DRAGON SUITE COLLECTION ✦</b>Black lacquer, gold leaf and crimson velvet, inspired by Ophion's old themed room. Hand-painted, one of a kind, priced to match.</div>`:''}<div class="grid3">`+
+ ks.map(k=>{const F=FURN[k],own=k=='ring'?S.ring:(S.inv[k]||0);const tr=F.lux?"Luxury":TIER(F.p);return`<button class="item${F.lux?' luxi':''}" onclick="buy('${k}')"><span class="own">${own}</span><span class="tier t${tr[0]}">${tr}</span><img src="${k=='ring'?RING:furnThumb(k)}"><span>${F.n}</span><span class="pr">${money(F.p)}</span>${F.act?`<small style="font-size:9px;color:#6a5a72">use: ${F.act}</small>`:''}</button>`;}).join('')+`</div>`);}
 function buy(k,fromZone){const F=FURN[k];if(S.money<F.p){toast(`Not enough money (${money(F.p)})`);sfx(180);return;}S.money-=F.p;if(k=='ring')S.ring++;else S.inv[k]=(S.inv[k]||0)+1;sfx(900);save(1);updateHud();
  if(k!='ring'&&SC.kind=='room'){openSheet(`<h3>BOUGHT: ${F.n.toUpperCase()}</h3><div style="text-align:center"><img src="${furnThumb(k)}" style="max-height:120px"></div><button class="mbtn gold" onclick="startDecor('${k}')">Place it in ${SC.n}'s room now</button><button class="mbtn" onclick="openShop()">Keep shopping</button>`);}
  else{toast(`Bought ${F.n}`);if(fromZone)zoneInfo(SC.n,fromZone);else openShop();}}
@@ -428,11 +454,13 @@ addEventListener('keydown',e=>{const m={ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:
  if(e.code=='Enter'||e.code=='Space'){okPress();e.preventDefault();}if(e.code=='Escape'){if(sheetOpen())closeSheet();else if(floorsOpen())closeFloors();else if(decor)cancelDecor();}
  if(e.code=='KeyT'&&!dlg.on&&!sheetOpen())talk(talkTarget());if(e.code=='KeyM'&&!dlg.on)openMenu();});
 addEventListener('keyup',e=>{const m={ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:'d',ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r'}[e.code];if(m)keys[m]=0;});
-let dragging=false,pd=null;
-cv.addEventListener('pointerdown',e=>{pd={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y,ux:cur.x,uy:cur.y};cv.setPointerCapture(e.pointerId);});
-cv.addEventListener('pointermove',e=>{if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!dragging&&Math.hypot(dx,dy)>9)dragging=true;if(dragging){cam.x=pd.cx-dx/cam.z;cam.y=pd.cy-dy/cam.z;clampCam();cur.x=pd.ux+(cam.x-pd.cx);cur.y=pd.uy+(cam.y-pd.cy);}});
-cv.addEventListener('pointerup',e=>{if(!pd)return;const wasDrag=dragging;dragging=false;pd=null;if(wasDrag)return;const r=cv.getBoundingClientRect(),[x,y]=S2W(e.clientX-r.left,e.clientY-r.top);cur.x=x;cur.y=y;if(decor)return;const t=targetAt(x,y,60/cam.z);hover=t;if(t)actOn(t);});
-cv.addEventListener('pointercancel',()=>{dragging=false;pd=null;});
+let dragging=false,pd=null;const PTS=new Map();let pinch=null;
+cv.addEventListener('wheel',e=>{e.preventDefault();setZoom((cam.zf||1)*(e.deltaY<0?1.15:1/1.15),1);},{passive:false});
+cv.addEventListener('pointerdown',e=>{PTS.set(e.pointerId,[e.clientX,e.clientY]);if(PTS.size==2){const [a,b]=[...PTS.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),f:cam.zf||1};dragging=true;return;}pd={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y,ux:cur.x,uy:cur.y};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{if(PTS.has(e.pointerId))PTS.set(e.pointerId,[e.clientX,e.clientY]);if(pinch&&PTS.size>=2){const [a,b]=[...PTS.values()];setZoom(pinch.f*Math.hypot(a[0]-b[0],a[1]-b[1])/Math.max(20,pinch.d),1);return;}if(!pd)return;const dx=e.clientX-pd.x,dy=e.clientY-pd.y;if(!dragging&&Math.hypot(dx,dy)>9)dragging=true;if(dragging){cam.x=pd.cx-dx/cam.z;cam.y=pd.cy-dy/cam.z;clampCam();cur.x=pd.ux+(cam.x-pd.cx);cur.y=pd.uy+(cam.y-pd.cy);}});
+cv.addEventListener('pointerup',e=>{PTS.delete(e.pointerId);if(pinch){if(PTS.size<2){pinch=null;pd=null;dragging=false;}return;}if(!pd)return;const wasDrag=dragging;dragging=false;pd=null;if(wasDrag)return;const r=cv.getBoundingClientRect(),[x,y]=S2W(e.clientX-r.left,e.clientY-r.top);cur.x=x;cur.y=y;if(decor)return;const t=targetAt(x,y,60/cam.z);hover=t;if(t)actOn(t);});
+cv.addEventListener('pointercancel',e=>{PTS.delete(e.pointerId);pinch=null;dragging=false;pd=null;});
+$('zIn').onclick=()=>setZoom((cam.zf||1)*1.5);$('zOut').onclick=()=>setZoom((cam.zf||1)/1.5);
 
 // ---------------- ring illustration (no sheet art exists for it) ----------------
 const RING=(()=>{const c=document.createElement('canvas');c.width=c.height=120;const g=c.getContext('2d');const gr=g.createLinearGradient(20,40,100,110);gr.addColorStop(0,'#fff3b0');gr.addColorStop(.5,'#e8b030');gr.addColorStop(1,'#a8701a');

@@ -1,0 +1,9 @@
+<!doctype html><html><body style="margin:0;background:#efe7dc"><canvas id="c"></canvas>
+<script src="furnart.js"></script><script src="furnart2.js"></script>
+<script>
+const ks=(location.hash.slice(1)||Object.keys(FA.DEF).join(',')).split(',');const cols=8,cw=200,chh=230;const c=document.getElementById('c');c.width=cols*cw;c.height=Math.ceil(ks.length/cols)*chh;const g=c.getContext('2d');
+g.fillStyle='#efe7dc';g.fillRect(0,0,c.width,c.height);
+ks.forEach((k,i)=>{const r=FA.render(k,(i%2)?1:0,[45,22.5]);const x=(i%cols)*cw,y=Math.floor(i/cols)*chh;g.strokeStyle='#ccc';g.strokeRect(x,y,cw,chh);
+ if(r){const s=Math.min(1,(cw-10)/r.w,(chh-30)/r.h);g.drawImage(r.cv,x+cw/2-r.w*s/2,y+chh-24-r.h*s,r.w*s,r.h*s);}g.fillStyle='#000';g.font='12px sans-serif';g.fillText(k,x+4,y+chh-6);});
+document.title='done';
+</script></body></html>
